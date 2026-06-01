@@ -136,6 +136,7 @@
     transition: background 0.2s ease, color 0.2s ease;
     width: 800px;
     transition: background 0.5s ease, color 0.5s ease;
+    margin-top: 20px;
 }
 
 .button:hover {
