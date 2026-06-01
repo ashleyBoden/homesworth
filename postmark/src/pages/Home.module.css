@@ -1,0 +1,104 @@
+.main {
+    min-height: calc(100vh - 300px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.eyebrow {
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+}
+
+.heading {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.subheading {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    text-align: center;
+    max-width: 600px;
+    margin-bottom: 2rem;
+}
+
+.searchBar {
+    display: flex;
+    flex-direction: row;
+    width: 600px;
+    margin-bottom: 1rem;
+}
+
+.searchBar input {
+    flex: 1;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-right: none;
+    border-radius: var(--radius-card) 0 0 var(--radius-card);
+    color: var(--text-primary);
+    font-size: 1rem;
+    outline: none;
+}
+
+.searchBar input:focus {
+    border-color: var(--accent);
+}
+
+.searchBar button {
+    padding: 1rem 1.75rem;
+    background: var(--accent);
+    border: none;
+    border-radius: 0 var(--radius-card) var(--radius-card) 0;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.searchBar button:hover {
+    opacity: 0.9;
+}
+
+.pills {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.pills button {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.375rem 1rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.pills button:hover {
+    background: var(--surface-hover);
+    border-color: var(--accent);
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.criteria a {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.criteria a:hover {
+    color: var(--text-primary);
+}
+
+.suggestion {
+    color: var(--text-secondary);
+}
