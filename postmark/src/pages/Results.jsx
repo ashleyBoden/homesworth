@@ -16,6 +16,21 @@ function processYearData(items) {
   return prices[median]
 }
 
+function getMostCommonType(items) {
+  if (!items || items.length === 0)
+    return null
+
+  const tally = {}
+  
+  items.forEach(item => {
+    const type = item.propertyType.prefLabel[0]._value
+    tally[type] = (tally[type] || 0) + 1
+  })
+
+  const mostCommon = Object.keys(tally).sort((a, b) => tally[b] - tally[a])[0]
+  return mostCommon
+}
+
 export default function Results({ criteria }) {
 
   const location = useLocation()
@@ -39,14 +54,16 @@ export default function Results({ criteria }) {
 
         setLocationData(postcodeData)
 
-        const { latitude, longitude } = postcodeData.result
+        const locality = postcodeData.result.admin_ward.toUpperCase()
+
+        const { latitude, longitude } = postcodeData.result        
      
         const years = [2021, 2022, 2023, 2024, 2025]
 
         const [crimeRes, ...priceResByYear] = await Promise.all([
           fetch(`https://data.police.uk/api/crimes-street/all-crime?lat=${latitude}&lng=${longitude}`),
           ...years.map(year =>
-            fetch(`https://landregistry.data.gov.uk/data/ppi/transaction-record.json?propertyAddress.postcode=${formatPostcode(postcode)}&min-transactionDate=${year}-01-01&max-transactionDate=${year}-12-31&_page=0&_pageSize=50`)
+            fetch(`https://landregistry.data.gov.uk/data/ppi/transaction-record.json?propertyAddress.locality=${locality}&min-transactionDate=${year}-01-01&max-transactionDate=${year}-12-31&_page=0&_pageSize=50`)
           )
         ])
 
@@ -65,19 +82,23 @@ export default function Results({ criteria }) {
 
   fetchAll()
 }, [postcode])
-
-
-  console.log('location:', locationData)
-  console.log('crime:', crimeData)
-  console.log('price:', priceData)
   
+    //House median price
   const priceByYear = priceData ? priceData.map(yearData =>
     processYearData(yearData.result.items)
   ) : null
 
+    //12 year price change
   const currentPrice = priceByYear?.findLast(price => price !== null)
+  const previousPrice = priceByYear?.slice(0, -1).findLast(price => price !== null)
+  const priceChange = currentPrice && previousPrice ?
+    ((currentPrice - previousPrice) / previousPrice * 100).toFixed(1) : null
 
-  console.log('price by year: ', priceByYear)
+    //Most common property type
+  const allTransactions = priceData ? priceData.flatMap(yearData => yearData.result.items || []) : []
+  const mostCommonType = getMostCommonType(allTransactions)
+
+
 
   return (
     <main className={styles.main}>
@@ -108,7 +129,7 @@ export default function Results({ criteria }) {
           <div className={styles.cardHeader}>
             <div>
               <p className={styles.cardTitle}>House prices</p>
-              <p className={styles.cardSource}>HM Land Registry · Apr 2026</p>
+              <p className={styles.cardSource}>HM Land Registry · {locationData?.result.admin_ward} area</p>
             </div>
             <div className={styles.scorePill}>
               <span className={styles.scoreDot}></span>
@@ -129,11 +150,13 @@ export default function Results({ criteria }) {
             </div>
             <div className={styles.stat}>
               <p className={styles.statLabel}>12-month change</p>
-              <p className={styles.statValue}>+4.2%</p>
+              <p className={styles.statValue}>
+                {priceChange ? `${priceChange > 0 ? '+' : ''}${priceChange}%` : 'No data'}
+              </p>
             </div>
             <div className={styles.stat}>
-              <p className={styles.statLabel}>Price per sq ft</p>
-              <p className={styles.statValue}>£372</p>
+              <p className={styles.statLabel}>Most common type</p>
+              <p className={styles.statValue}>{mostCommonType || 'No data'}</p>
             </div>
           </div>          
 
