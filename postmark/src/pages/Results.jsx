@@ -140,6 +140,9 @@ export default function Results({ criteria }) {
   const allTransactions = priceData ? priceData.flatMap(yearData => yearData.result.items || []) : []
   const mostCommonType = getMostCommonType(allTransactions)
 
+    //National rank
+  const rank = locationData?.result.index_of_multiple_deprivation
+  
 
 
   return (
@@ -209,7 +212,7 @@ export default function Results({ criteria }) {
           <div className={styles.cardHeader}>
             <div>
               <p className={styles.cardTitle}>Crime rate</p>
-              <p className={styles.cardSource}>Police.uk · rolling 12 mo</p>
+              <p className={styles.cardSource}>Police.uk · {formatMonth(crimeData?.[0]?.month)}</p>
             </div>
             <div className={styles.scorePill}>
               <span className={styles.scoreDot}></span>
@@ -225,7 +228,7 @@ export default function Results({ criteria }) {
 
           <div className={`${styles.stats} ${styles.statsWithBorder}`}>
             <div className={styles.stat}>
-              <p className={styles.statLabel}>Total crime for the mont</p>
+              <p className={styles.statLabel}>Total crime for the month</p>
               <p className={styles.statValue}>{total ? total : null}</p>
             </div>
             <div className={styles.stat}>
@@ -296,15 +299,15 @@ export default function Results({ criteria }) {
           <div className={styles.stats}>
             <div className={styles.stat}>
               <p className={styles.statLabel}>IMD decile</p>
-              <p className={styles.statValue}>5</p>
+              <p className={styles.statValue}>{rank ? Math.ceil((rank / 32844) * 10) : null}</p>
             </div>
             <div className={styles.stat}>
               <p className={styles.statLabel}>National rank</p>
-              <p className={styles.statValue}>14,203</p>
+              <p className={styles.statValue}>{rank ? rank : null} out of 32,844</p>
             </div>
             <div className={styles.stat}>
-              <p className={styles.statLabel}>Region rank</p>
-              <p className={styles.statValue}>3,847</p>
+              <p className={styles.statLabel}>Parliamentary constituency</p>
+              <p className={styles.statValue}>{locationData ? locationData.result.parliamentary_constituency_2024 : null}</p>
             </div>
           </div>
         </div>
