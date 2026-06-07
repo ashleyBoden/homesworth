@@ -46,6 +46,24 @@ function getLast5Years() {
   ]
 }
 
+function getPriceSummary ( vsUKAverage, priceChange ) {
+  const affordability = vsUKAverage < -50000 
+    ? 'significantly more affordable than the UK average' 
+    : vsUKAverage < 0
+    ? 'below the UK average'
+    : vsUKAverage < 50000
+    ? 'close to the UK average'
+    : 'above the UK average'
+
+  const trend = priceChange > 5
+    ? 'with strong price growth over the past few years'
+    : priceChange > 0 
+    ? 'with modest price growth'
+    : 'with prices remaining flat or declining'
+
+  return `${affordability.charAt(0).toUpperCase() + affordability.slice(1)}, ${trend}.`
+}
+
 const years = getLast5Years()
 
   //Crime data processing functions
@@ -355,7 +373,9 @@ export default function Results({ criteria }) {
                 <div className={styles.progressFill} style={{ width: `${scores?.housePricesScore * 10}%` }}></div>
               </div>
 
-              <p className={styles.cardSummary}>Above the Manchester average, but stable and well-supported by demand.</p>
+              <p className={styles.cardSummary}>
+                {vsUKAverage !== null ? getPriceSummary(vsUKAverage, parseFloat(priceChange)) : ''}
+              </p>
 
               <div className={`${styles.stats} ${styles.statsWithBorder}`}>
                 <div className={styles.stat}>
@@ -421,8 +441,6 @@ export default function Results({ criteria }) {
                 <div className={styles.progressFill} style={{ width: `${scores?.crimeScore * 10}%` }}></div>
               </div>
 
-              <p className={styles.cardSummary}>Lower than most of inner Manchester. Vehicle crime is the main category.</p>
-
               <div className={styles.stats}>
                 <div className={styles.stat}>
                   <p className={styles.statLabel}>Total crime for the month</p>
@@ -455,8 +473,6 @@ export default function Results({ criteria }) {
                 <div className={styles.progressFill} style={{ width: `${scores?.commuteScore * 10}%` }}></div>
               </div>
 
-              <p className={styles.cardSummary}>Fast, frequent links into the city centre on both Metrolink and rail.</p>
-
               <div className={styles.stats}>
                 <div className={styles.stat}>
                   <p className={styles.statLabel}>Nearest city</p>
@@ -488,8 +504,6 @@ export default function Results({ criteria }) {
               <div className={styles.progressBar}>
                 <div className={styles.progressFill} style={{ width: `${scores?.deprivationScore * 10}%` }}></div>
               </div>
-
-              <p className={styles.cardSummary}>Mid-range deprivation. Some variation within the postcode district.</p>
 
               <div className={styles.stats}>
                 <div className={styles.stat}>
