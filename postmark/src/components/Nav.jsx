@@ -7,8 +7,8 @@ export default function Nav() {
         <div className={styles.home}>
             <Link to="/">
                 <svg width="22" height="22" viewBox="0 0 22 22">
-                    <circle cx="11" cy="11" r="10" fill="none" stroke="#4169E1" strokeWidth="2"/>
-                    <circle cx="11" cy="11" r="4" fill="none" stroke="#4169E1" strokeWidth="1.5"/>
+                    <circle cx="11" cy="11" r="10" fill="none" stroke="#0D9488" strokeWidth="2"/>
+                    <circle cx="11" cy="11" r="4" fill="none" stroke="#0D9488" strokeWidth="1.5"/>
                 </svg>
                 Postmark
             </Link>

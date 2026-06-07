@@ -14,7 +14,6 @@
     align-items: center;
     width: 100%;
     padding-bottom: 24px;
-    border-bottom: 1px solid var(--border);
     margin-bottom: 16px;
     
 }
@@ -90,6 +89,7 @@
     padding: 20px;
     margin-bottom: 20px;
     width: 100%;
+    box-shadow: 0 0 5px rgba(65, 105, 225, 0.3);
 }
 
 .cardHeader {
@@ -108,7 +108,7 @@
 
 .progressBar {
     width: 100%;
-    height: 3px;
+    height: 7px;
     background: var(--surface);
     border-radius: 5px;
     overflow: hidden;
@@ -119,6 +119,7 @@
 .progressFill {
     height: 100%;
     background: var(--accent);
+    transition: width 1s ease-out;
 }
 
 .stats {
@@ -175,8 +176,7 @@
 .back {
     align-self: flex-start;
     color: var(--text-secondary);
-    margin-bottom: 24px;
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     transition: all 0.2s ease;
 }
 
@@ -226,8 +226,8 @@
 }
 
 .spinner {
-    width: 48px;
-    height: 48px;
+    width: 96px;
+    height: 96px;
     border: 4px solid var(--border);
     border-top-color: var(--accent);
     border-radius: 50%;
@@ -236,7 +236,8 @@
 
 .loadingText {
     color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: 1.1rem;
+    font-weight: bold;
 }
 
 @keyframes spin {

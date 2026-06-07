@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
 
 *,
 *::before,
@@ -9,12 +9,12 @@
 }
 
 :root {
-  --bg: #1A1A1C;
-  --surface: #222226;
+  --bg: #16181D;
+  --surface: #252830;
   --surface-hover: #2A2A30;
   --border: rgba(255, 255, 255, 0.08);
-  --accent: #4169E1;
-  --accent-tint: rgba(65, 105, 225, 0.15);
+  --accent: #0D9488;
+  --accent-tint: rgba(13, 148, 136, 0.15);
   --text-primary: #FFFFFF;
   --text-secondary: #888892;
   --positive: #4CAF82;
@@ -26,7 +26,7 @@
 body {
   background-color: var(--bg);
   color: var(--text-primary);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 16px;
   line-height: 1.6;
   min-height: 100vh;
@@ -39,10 +39,10 @@ a {
 }
 
 button {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   cursor: pointer;
 }
 
 input {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
 }

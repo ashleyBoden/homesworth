@@ -175,9 +175,10 @@ export default function Results({ criteria }) {
   const { total, mostCommonCategory } = crimeStats || {} //Crime data
   const [commuteData, setCommuteData] = useState(null)
   const [showPriceTrend, setShowPriceTrend] = useState(false)
+  const [animate, setAnimate] = useState(false)
 
 
-  useEffect(() => {
+useEffect(() => {
     const fetchAll = async () => {
       try {
 
@@ -210,9 +211,11 @@ export default function Results({ criteria }) {
           (
             node["railway"="station"](around:3000,${latitude},${longitude});
             node["railway"="halt"](around:3000,${latitude},${longitude});
+            node["railway"="tram_stop"](around:3000,${latitude},${longitude});
           );
           out;
         `
+
         //Land registry and Crime data APIs
         const [crimeRes, ...priceResByYear] = await Promise.all([
           fetch(`https://data.police.uk/api/crimes-street/all-crime?lat=${latitude}&lng=${longitude}`),
@@ -221,18 +224,29 @@ export default function Results({ criteria }) {
           )
         ])
 
-        // Stations - separate so it doesn't block everything else
-        let nearbyStations = 0
+        // Transport - separate so it doesn't block everything else
+        let nearbyStations = null
+        let hasTram = null
+
         try {
-          const stationRes = await fetch('https://overpass-api.de/api/interpreter', {
-          method: 'POST',
-          body: overpassQuery
-        })
-        const stationsJson = await stationRes.json()
-        nearbyStations = stationsJson.elements.length
-        console.log('stations:', stationsJson.elements.map(s => s.tags.name))
+          const transportRes = await fetch('https://overpass-api.de/api/interpreter', {
+            method: 'POST',
+            body: overpassQuery
+          })
+          const transportJson = await transportRes.json()
+          
+          const stations = transportJson.elements.filter(e => 
+            e.tags.railway === 'station' || e.tags.railway === 'halt'
+          )
+          const tramStops = transportJson.elements.filter(e => 
+            e.tags.railway === 'tram_stop'
+          )
+
+          nearbyStations = stations.length
+          hasTram = tramStops.length > 0
+
         } catch {
-          console.log('Stations data unavailable')
+          console.log('Transport data unavailable')
         }
 
         const crimeJson = await crimeRes.json()
@@ -257,20 +271,18 @@ export default function Results({ criteria }) {
         setCommuteData({
           nearestCity,
           distanceMiles,
-          nearbyStations
+          nearbyStations,
+          hasTram
         })
-
-        console.log(crimeJson)
-        
 
       } catch (err) {
         console.error('fetchAll error: ', err)
         setError('Something went wrong. Please try again.')
+      }
     }
-  }
 
-  fetchAll()
-}, [postcode])
+    fetchAll()
+  }, [postcode])
   
     //House median price
   const priceByYear = priceData ? priceData.map(yearData =>
@@ -318,14 +330,16 @@ export default function Results({ criteria }) {
     // loading
   const isLoading = !locationData || !crimeData || !priceData || !commuteData
 
+  useEffect(() => {
+    if (!isLoading) {
+      setTimeout(() => setAnimate(true), 100)
+    }
+  }, [isLoading])
+
   return (
     <main className={styles.main}>
 
-        {error && <p className={styles.error}>{error}</p>}
-
-        <Link className={styles.back} to="/">
-        New search
-        </Link>
+        {error && <p className={styles.error}>{error}</p>}        
 
         {isLoading ? (
           <div className={styles.loadingContainer}>
@@ -334,6 +348,9 @@ export default function Results({ criteria }) {
           </div>
         ) : (
           <>
+            <Link className={styles.back} to="/">
+                New search
+            </Link>
             <div className={styles.header}>
               <div className={styles.headerLeft}>
                 <p className={styles.postcode}>{formatPostcode(postcode)}</p>
@@ -341,17 +358,33 @@ export default function Results({ criteria }) {
               </div>
 
               <div className={styles.headerRight}>
-                <svg width="150" height="150" viewBox="0 0 120 120">
+                <svg width="200" height="200" viewBox="0 0 120 120">
+                  <defs>
+                    <filter id="glow">
+                      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                      <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                      </feMerge>
+                    </filter>
+                  </defs>
                   <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="4"/>
-                  <circle cx="60" cy="60" r="54" fill="none" stroke="#4169E1" strokeWidth="8"
+                  <circle cx="60" cy="60" r="54" fill="none" stroke="#0D9488" strokeWidth="8"
                     strokeDasharray="339.3"
                     strokeDashoffset={339.3 * (1 - (scores?.overallScore ?? 0) / 10)}
                     strokeLinecap="round"
                     transform="rotate(-90 60 60)"
+                    filter="url(#glow)"
                   />
+                  <text x="60" y="53" textAnchor="middle" dominantBaseline="central" 
+                    fill="#FFFFFF" fontSize="28" fontWeight="700" fontFamily="Outfit, sans-serif">
+                      {scores ? scores.overallScore.toFixed(1) : '—'}
+                  </text>
+                  <text x="60" y="80" textAnchor="middle" dominantBaseline="central"
+                    fill="#888892" fontSize="12" fontFamily="Outfit, sans-serif">
+                      / 10
+                  </text>
                 </svg>
-                <p className={styles.scoreNumber}>{scores ? scores.overallScore.toFixed(1) : '—'}</p>
-                <p className={styles.scoreLabel}>/ 10</p>
                 <p className={styles.scoreName}>POSTMARK SCORE</p>
               </div>
           
@@ -370,7 +403,10 @@ export default function Results({ criteria }) {
               </div>
 
               <div className={styles.progressBar}>
-                <div className={styles.progressFill} style={{ width: `${scores?.housePricesScore * 10}%` }}></div>
+                <div 
+                  className={styles.progressFill} 
+                    style={{ width: animate ? `${scores?.housePricesScore * 10}%` : '0%' }}
+                  ></div>
               </div>
 
               <p className={styles.cardSummary}>
@@ -414,9 +450,9 @@ export default function Results({ criteria }) {
                       <Line 
                         type="linear" 
                         dataKey="price" 
-                        stroke="#4169E1" 
+                        stroke="#0D9488" 
                         strokeWidth={2}
-                        dot={{ fill: '#4169E1', r: 4 }}
+                        dot={{ fill: '#0D9488', r: 4 }}
                         activeDot={{ r: 6 }}
                       />
                     </LineChart>
@@ -438,7 +474,10 @@ export default function Results({ criteria }) {
               </div>
 
               <div className={styles.progressBar}>
-                <div className={styles.progressFill} style={{ width: `${scores?.crimeScore * 10}%` }}></div>
+                <div 
+                  className={styles.progressFill} 
+                    style={{ width: animate ? `${scores?.crimeScore * 10}%` : '0%' }}
+                  ></div>
               </div>
 
               <div className={styles.stats}>
@@ -470,21 +509,28 @@ export default function Results({ criteria }) {
               </div>
 
               <div className={styles.progressBar}>
-                <div className={styles.progressFill} style={{ width: `${scores?.commuteScore * 10}%` }}></div>
+                <div 
+                  className={styles.progressFill} 
+                    style={{ width: animate ? `${scores?.commuteScore * 10}%` : '0%' }}
+                  ></div>
               </div>
 
               <div className={styles.stats}>
                 <div className={styles.stat}>
                   <p className={styles.statLabel}>Nearest city</p>
-                  <p className={styles.statValue}>{commuteData?.nearestCity || 'Loading...'}</p>
+                  <p className={styles.statValue}>{`${commuteData?.nearestCity} · ${commuteData.distanceMiles} mi`|| 'Loading...'}</p>
                 </div>
                 <div className={styles.stat}>
-                  <p className={styles.statLabel}>Distance to {commuteData?.nearestCity}</p>
-                  <p className={styles.statValue}>{commuteData ? `${commuteData.distanceMiles} miles` : 'Loading...'}</p>
+                  <p className={styles.statLabel}>Tram access</p>
+                  <p className={styles.statValue}>
+                    {commuteData?.hasTram === null ? '—' : commuteData?.hasTram ? 'Yes' : 'No'}
+                  </p>
                 </div>
                 <div className={styles.stat}>
                   <p className={styles.statLabel}>Train Stations &lt; 3 miles</p>
-                  <p className={styles.statValue}>{commuteData !== null ? commuteData.nearbyStations : 'Loading...'}</p>
+                  <p className={styles.statValue}>
+                    {commuteData?.nearbyStations === null ? '—' : commuteData?.nearbyStations}
+                  </p>
                 </div>
               </div>
             </div>
@@ -502,7 +548,10 @@ export default function Results({ criteria }) {
               </div>
 
               <div className={styles.progressBar}>
-                <div className={styles.progressFill} style={{ width: `${scores?.deprivationScore * 10}%` }}></div>
+                <div 
+                  className={styles.progressFill} 
+                    style={{ width: animate ? `${scores?.deprivationScore * 10}%` : '0%' }}
+                  ></div>
               </div>
 
               <div className={styles.stats}>

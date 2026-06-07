@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import styles from './Criteria.module.css'
 
 function getWeightLabel(value) {
@@ -11,6 +11,11 @@ function getWeightLabel(value) {
 }
 
 export default function Criteria({ criteria, setCriteria }) {  
+
+  const navigate = useNavigate()
+  const handleSearch = () => {
+    navigate('/')
+  }
 
   return (
     <main className={styles.main}>
@@ -105,7 +110,12 @@ export default function Criteria({ criteria, setCriteria }) {
       </div>
       
 
-      <button className={styles.button} onClick={() => console.log(criteria)}>Search with these weights</button>
+      <button 
+        className={styles.button} 
+        onClick={() => navigate('/')}
+        >
+          Search with these weights
+      </button>
     </main>
   )
 }
