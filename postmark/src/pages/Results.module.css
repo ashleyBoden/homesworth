@@ -272,3 +272,48 @@
         transform: rotate(360deg);
     }
 }
+
+.moreInfoButton {
+    border: none;
+    background: none;
+    color: var(--text-primary);
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    margin-top: 12px;
+}
+.moreInfoButton:hover {
+    opacity: 0.8;
+}
+
+.moreInfoContent > h3 {
+    margin-top: 0;
+    color: var(--text-primary);
+}
+
+.moreInfoContent > p {
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-top: 8px;
+    padding: 8px 16px;
+}
+
+.moreInfoOverlay {
+    margin-top: 16px;
+}
+
+.closeButton {
+    background: var(--accent-hover);
+    color: var(--text-secondary);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 16px;
+}
+
+.closeButton:hover {
+    color: var(--text-primary);
+    scale: 1.025;
+}

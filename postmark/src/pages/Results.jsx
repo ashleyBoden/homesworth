@@ -175,6 +175,7 @@ export default function Results({ criteria }) {
   const [commuteData, setCommuteData] = useState(null)
   const [showPriceTrend, setShowPriceTrend] = useState(false)
   const [animate, setAnimate] = useState(false)
+  const [showMoreInfo, setShowMoreInfo] = useState(false)
 
 
 useEffect(() => {
@@ -331,14 +332,16 @@ useEffect(() => {
   }, [isLoading])
 
   function scorePillClass(score) {
+    if (score == 0.0) return styles.scorePillLow
     if (!score) return ''
     if (score >= 7) return styles.scorePillHigh
     if (score >= 4) return styles.scorePillMid
-    if(score == 0.0) return styles.scorePillLow
     return styles.scorePillLow
   }
 
   function scoreDotClass(score) {
+    
+    if (score == 0.0) return styles.scoreDotLow
     if (!score) return ''
     if (score >= 7) return styles.scoreDotHigh
     if (score >= 4) return styles.scoreDotMid
@@ -398,7 +401,7 @@ useEffect(() => {
                       / 10
                   </text>
                 </svg>
-                <p className={styles.scoreName}>POSTMARK SCORE</p>
+                <p className={styles.scoreName}>HOMESWORTH SCORE</p>
               </div>
           
             </div>
@@ -552,6 +555,7 @@ useEffect(() => {
               <div className={styles.cardHeader}>
                 <div>
                   <p className={styles.cardTitle}>Deprivation index</p>
+                  
                   <p className={styles.cardSource}>ONS · IMD 2019</p>
                 </div>
                 <div className={`${styles.scorePill} ${scorePillClass(scores?.deprivationScore)}`}>
@@ -581,6 +585,15 @@ useEffect(() => {
                   <p className={styles.statValue}>{locationData ? locationData.result.parliamentary_constituency_2024 : null}</p>
                 </div>
               </div>
+              <button className={styles.moreInfoButton} onClick={() => setShowMoreInfo(!showMoreInfo)}>What is the Deprivation Index?</button>
+              {showMoreInfo && (
+                    <div className={styles.moreInfoOverlay}>
+                      <div className={styles.moreInfoContent}>
+                        <p>The Deprivation Index is a measure of relative deprivation in England, based on factors such as income, employment, health, education, housing, and crime. It is calculated by the Office for National Statistics (ONS) and is used to identify areas that may require additional support or resources. Decile 1 means the area is in the most deprived 10% nationally. Decile 10 means least deprived.</p>
+                        <button className={styles.closeButton} onClick={() => setShowMoreInfo(false)}>Close</button>
+                      </div>
+                    </div>
+                  )}
             </div>
           </>
         )

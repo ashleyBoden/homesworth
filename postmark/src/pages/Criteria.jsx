@@ -25,7 +25,7 @@ export default function Criteria({ criteria, setCriteria }) {
       </Link>
 
       <h1 className={styles.heading}>Set your criteria</h1>
-      <p className={styles.subheading}>Drag to tell Postmark how much each factor matters. Higher weights pull the overall score toward that criterion.</p>
+      <p className={styles.subheading}>Drag to tell us how much each factor matters. Higher weights pull the overall score toward that criterion.</p>
 
       <div className={styles.row}>
         <div className={styles.rowInfo}>
