@@ -143,3 +143,63 @@
     background: var(--accent-tint);
     color: var(--accent);
 }
+
+@media (max-width: 768px) {
+    
+    .row {
+        max-width: 90%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .heading {
+        font-size: 2rem;
+        padding: 20px;
+        margin: 0px;
+    }
+
+    .subheading {
+        font-size: 1rem;
+        padding: 20px;
+        margin: 0;
+    }
+
+    .back {
+        padding-left: 20px;
+    }
+
+    .button {
+        max-width: 90%;
+        margin-bottom: 25px;
+        margin-top: 0px;
+    }
+
+    .row input[type="range"] {
+        width: 100%;
+    }
+
+    .rowValue {
+        order: 3;
+        align-self: flex-end;
+        text-align: right;
+        display: flex;
+        flex-direction: row;
+        align-items: baseline;
+        gap: 6px;
+    }
+
+    .rowValue span {
+        font-size: 1.1rem;
+    }
+
+    .rowValue p {
+        font-size: 0.75em;
+    }
+
+    .rowInfo {
+        width: 100%;
+        flex-wrap: nowrap;
+    }
+}

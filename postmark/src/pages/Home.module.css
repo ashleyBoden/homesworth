@@ -33,6 +33,7 @@
     display: flex;
     flex-direction: row;
     width: 600px;
+    max-width: 90%;
     margin-bottom: 1rem;
     position: relative;
 }
@@ -133,4 +134,34 @@
 
 .suggestions li:hover {
     background: rgba(255, 255, 255, 0.05);
+}
+
+
+@media (max-width: 768px) {
+    .searchBar input {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .searchBar button {
+        padding: 0.75rem 1.25rem;
+        font-size: 0.9rem;
+    }
+
+    .eyebrow {
+        font-size: 0.8rem;
+    }
+
+    .heading {
+        font-size: 2rem;
+    }
+
+    .subheading {
+        font-size: 1rem;
+        max-width: 90%;
+    }
+
+    .suggestions {
+        width: 30%;
+    }
 }

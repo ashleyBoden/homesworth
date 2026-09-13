@@ -317,3 +317,65 @@
     color: var(--text-primary);
     scale: 1.025;
 }
+
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 24px;
+    }
+
+    .headerRight {
+        order: -1;
+    }
+
+    .scoreName {
+        display: none;
+    }
+
+    .back {
+        margin-bottom: 15px;
+        margin-left: 15px;
+    }
+
+    .card {
+        max-width: 90%;
+        font-size: 0.8rem;
+    }
+
+    .stats {
+        flex-direction: column;
+        padding: 0px 0px 10px 0px;
+
+
+    }
+
+    .stat:nth-child(2) {
+        text-align: left;
+    }
+    
+    .stat:nth-child(3) {
+        text-align: left;
+    }
+
+    .stat {
+        flex: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 4px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 8px;
+        margin-bottom: 8px;
+    }
+
+    .stat:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+
+    .statValue {
+        text-align: right;
+    }
+}

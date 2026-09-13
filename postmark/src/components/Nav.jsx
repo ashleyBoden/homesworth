@@ -1,7 +1,11 @@
 import { Link } from "react-router-dom";
 import styles from "./Nav.module.css";
+import { useState } from "react";
 
 export default function Nav() {
+
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
       <nav className={styles.nav}>
         <div className={styles.home}>
@@ -13,10 +17,17 @@ export default function Nav() {
                 Homesworth
             </Link>
         </div>
-        <ul className={styles.navList}>          
-          <li className={styles.navItem}><Link to="/">How it works</Link></li>
-          <li className={styles.navItem}><Link to="/">About</Link></li>
+        <ul className={`${styles.navList} ${menuOpen ? styles.navListOpen : ""}`}>          
+          <li className={styles.navItem}><Link to="/" onClick={() => setMenuOpen(false)}>How it works</Link></li>
+          <li className={styles.navItem}><Link to="/" onClick={() => setMenuOpen(false)}>About</Link></li>
         </ul>
+
+        <button 
+          className={styles.hamburger} 
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          ☰
+        </button>
     </nav>
   )
 }

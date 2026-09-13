@@ -176,7 +176,15 @@ export default function Results({ criteria }) {
   const [showPriceTrend, setShowPriceTrend] = useState(false)
   const [animate, setAnimate] = useState(false)
   const [showMoreInfo, setShowMoreInfo] = useState(false)
+  const [openCard, setOpenCard] = useState(null)
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
 
+
+useEffect(() => {
+  const handleResize = () => setIsMobile(window.innerWidth <= 768)
+  window.addEventListener('resize', handleResize)
+  return () => window.removeEventListener('resize', handleResize)
+}, [])
 
 useEffect(() => {
     const fetchAll = async () => {
@@ -407,7 +415,7 @@ useEffect(() => {
             </div>
 
             <div className={styles.card}>
-              <div className={styles.cardHeader}>
+              <div className={styles.cardHeader} onClick={() => setOpenCard(openCard === 'housePrices' ? null : 'housePrices')}>
                 <div>
                   <p className={styles.cardTitle}>House prices</p>
                   <p className={styles.cardSource}>HM Land Registry · {locationData?.result.admin_ward} area</p>
@@ -418,67 +426,71 @@ useEffect(() => {
                 </div>
               </div>
 
-              <div className={styles.progressBar}>
-                <div 
-                  className={styles.progressFill} 
-                    style={{ width: animate ? `${scores?.housePricesScore * 10}%` : '0%' }}
-                  ></div>
-              </div>
+              {(!isMobile || openCard === 'housePrices') && (
+                <>
+                  <div className={styles.progressBar}>
+                    <div 
+                      className={styles.progressFill} 
+                        style={{ width: animate ? `${scores?.housePricesScore * 10}%` : '0%' }}
+                      ></div>
+                  </div>
 
-              <p className={styles.cardSummary}>
-                {vsUKAverage !== null ? getPriceSummary(vsUKAverage, parseFloat(priceChange)) : ''}
-              </p>
+                  <p className={styles.cardSummary}>
+                    {vsUKAverage !== null ? getPriceSummary(vsUKAverage, parseFloat(priceChange)) : ''}
+                  </p>
 
-              <div className={`${styles.stats} ${styles.statsWithBorder}`}>
-                <div className={styles.stat}>
-                  <p className={styles.statLabel}>Median sold price</p>
-                  <p className={styles.statValue}>{currentPrice ? `£${currentPrice.toLocaleString()}` : 'No data'}</p>
-                </div>
-                <div className={styles.stat}>
-                  <p className={styles.statLabel}>vs UK Median</p>
-                  <p className={styles.statValue}>{vsUKAverageFormatted || 'No data'}</p>
-                </div>
-                <div className={styles.stat}>
-                  <p className={styles.statLabel}>Most common type</p>
-                  <p className={styles.statValue}>{mostCommonType || 'No data'}</p>
-                </div>
-              </div>          
+                  <div className={`${styles.stats} ${styles.statsWithBorder}`}>
+                    <div className={styles.stat}>
+                      <p className={styles.statLabel}>Median sold price</p>
+                      <p className={styles.statValue}>{currentPrice ? `£${currentPrice.toLocaleString()}` : 'No data'}</p>
+                    </div>
+                    <div className={styles.stat}>
+                      <p className={styles.statLabel}>vs UK Median</p>
+                      <p className={styles.statValue}>{vsUKAverageFormatted || 'No data'}</p>
+                    </div>
+                    <div className={styles.stat}>
+                      <p className={styles.statLabel}>Most common type</p>
+                      <p className={styles.statValue}>{mostCommonType || 'No data'}</p>
+                    </div>
+                  </div>          
 
-              <button 
-                className={styles.trendToggle}
-                onClick={() => setShowPriceTrend(!showPriceTrend)}
-              >
-                Trend {showPriceTrend ? '▲' : '▼'}
-              </button>
+                  <button 
+                    className={styles.trendToggle}
+                    onClick={() => setShowPriceTrend(!showPriceTrend)}
+                  >
+                    Trend {showPriceTrend ? '▲' : '▼'}
+                  </button>
 
-              {showPriceTrend && (
-                <div style={{ width: '100%', height: 240 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={priceChartData} margin={{ top: 10, right: 20, bottom: 0, left: 20 }}>
-                      <XAxis dataKey="year" stroke="#888892" tick={{ fill: '#888892', fontSize: 12 }} />
-                      <YAxis hide={true} domain={['dataMin - 10000', 'dataMax + 10000']} />
-                      <Tooltip 
-                        formatter={(value) => [`£${value.toLocaleString()}`, 'Median price']}
-                        contentStyle={{ background: '#222226', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px' }}
-                        labelStyle={{ color: '#888892' }}
-                        itemStyle={{ color: '#F5F4F0' }}
-                      />
-                      <Line 
-                        type="linear" 
-                        dataKey="price" 
-                        stroke="#0D9488" 
-                        strokeWidth={2}
-                        dot={{ fill: '#0D9488', r: 4 }}
-                        activeDot={{ r: 6 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
+                  {showPriceTrend && (
+                    <div style={{ width: '100%', height: 240 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={priceChartData} margin={{ top: 10, right: 20, bottom: 0, left: 20 }}>
+                          <XAxis dataKey="year" stroke="#888892" tick={{ fill: '#888892', fontSize: 12 }} />
+                          <YAxis hide={true} domain={['dataMin - 10000', 'dataMax + 10000']} />
+                          <Tooltip 
+                            formatter={(value) => [`£${value.toLocaleString()}`, 'Median price']}
+                            contentStyle={{ background: '#222226', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px' }}
+                            labelStyle={{ color: '#888892' }}
+                            itemStyle={{ color: '#F5F4F0' }}
+                          />
+                          <Line 
+                            type="linear" 
+                            dataKey="price" 
+                            stroke="#0D9488" 
+                            strokeWidth={2}
+                            dot={{ fill: '#0D9488', r: 4 }}
+                            activeDot={{ r: 6 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
             <div className={styles.card}>
-              <div className={styles.cardHeader}>
+              <div className={styles.cardHeader} onClick={() => setOpenCard(openCard === 'crime' ? null : 'crime')}>
                 <div>
                   <p className={styles.cardTitle}>Crime rate</p>
                   <p className={styles.cardSource}>Police.uk · {formatMonth(crimeData?.[0]?.month)}</p>
@@ -489,31 +501,35 @@ useEffect(() => {
                 </div>
               </div>
 
-              <div className={styles.progressBar}>
-                <div 
-                  className={styles.progressFill} 
-                    style={{ width: animate ? `${scores?.crimeScore * 10}%` : '0%' }}
-                  ></div>
-              </div>
+              {(!isMobile || openCard === 'crime') && (
+                <>         
+                  <div className={styles.progressBar}>
+                  <div 
+                    className={styles.progressFill} 
+                      style={{ width: animate ? `${scores?.crimeScore * 10}%` : '0%' }}
+                    ></div>
+                  </div>
 
-              <div className={styles.stats}>
-                <div className={styles.stat}>
-                  <p className={styles.statLabel}>Total crime for the month</p>
-                  <p className={styles.statValue}>{total ? total : null}</p>
-                </div>
-                <div className={styles.stat}>
-                  <p className={styles.statLabel}>Data period</p>
-                  <p className={styles.statValue}>{formatMonth(crimeData?.[0]?.month)}</p>
-                </div>
-                <div className={styles.stat}>
-                  <p className={styles.statLabel}>Most common</p>
-                  <p className={styles.statValue}>{mostCommonCategory ? formatCategory(mostCommonCategory) : 'No data'}</p>
-                </div>
-              </div>          
+                  <div className={styles.stats}>
+                    <div className={styles.stat}>
+                      <p className={styles.statLabel}>Total crime for the month</p>
+                      <p className={styles.statValue}>{total ? total : null}</p>
+                    </div>
+                    <div className={styles.stat}>
+                      <p className={styles.statLabel}>Data period</p>
+                      <p className={styles.statValue}>{formatMonth(crimeData?.[0]?.month)}</p>
+                    </div>
+                    <div className={styles.stat}>
+                      <p className={styles.statLabel}>Most common</p>
+                      <p className={styles.statValue}>{mostCommonCategory ? formatCategory(mostCommonCategory) : 'No data'}</p>
+                    </div>
+                  </div>
+                </>
+              )}          
             </div>
 
             <div className={styles.card}>
-              <div className={styles.cardHeader}>
+              <div className={styles.cardHeader} onClick={() => setOpenCard(openCard === 'commute' ? null : 'commute')}>
                 <div>
                   <p className={styles.cardTitle}>Commute time</p>
                   <p className={styles.cardSource}>OpenStreetMap · Nearby transport</p>
@@ -524,35 +540,39 @@ useEffect(() => {
                 </div>
               </div>
 
-              <div className={styles.progressBar}>
-                <div 
-                  className={styles.progressFill} 
-                    style={{ width: animate ? `${scores?.commuteScore * 10}%` : '0%' }}
-                  ></div>
-              </div>
+              {(!isMobile || openCard === 'commute') && (
+                <>
+                  <div className={styles.progressBar}>
+                    <div 
+                      className={styles.progressFill} 
+                        style={{ width: animate ? `${scores?.commuteScore * 10}%` : '0%' }}
+                      ></div>
+                  </div>
 
-              <div className={styles.stats}>
-                <div className={styles.stat}>
-                  <p className={styles.statLabel}>Nearest city</p>
-                  <p className={styles.statValue}>{`${commuteData?.nearestCity} · ${commuteData.distanceMiles} mi`|| 'Loading...'}</p>
-                </div>
-                <div className={styles.stat}>
-                  <p className={styles.statLabel}>Tram access</p>
-                  <p className={styles.statValue}>
-                    {commuteData?.hasTram === null ? '—' : commuteData?.hasTram ? 'Yes' : 'No'}
-                  </p>
-                </div>
-                <div className={styles.stat}>
-                  <p className={styles.statLabel}>Train Stations &lt; 3 miles</p>
-                  <p className={styles.statValue}>
-                    {commuteData?.nearbyStations === null ? '—' : commuteData?.nearbyStations}
-                  </p>
-                </div>
-              </div>
+                  <div className={styles.stats}>
+                    <div className={styles.stat}>
+                      <p className={styles.statLabel}>Nearest city</p>
+                      <p className={styles.statValue}>{`${commuteData?.nearestCity} · ${commuteData.distanceMiles} mi`|| 'Loading...'}</p>
+                    </div>
+                    <div className={styles.stat}>
+                      <p className={styles.statLabel}>Tram access</p>
+                      <p className={styles.statValue}>
+                        {commuteData?.hasTram === null ? '—' : commuteData?.hasTram ? 'Yes' : 'No'}
+                      </p>
+                    </div>
+                    <div className={styles.stat}>
+                      <p className={styles.statLabel}>Train Stations &lt; 3 miles</p>
+                      <p className={styles.statValue}>
+                        {commuteData?.nearbyStations === null ? '—' : commuteData?.nearbyStations}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className={styles.card}>
-              <div className={styles.cardHeader}>
+              <div className={styles.cardHeader} onClick={() => setOpenCard(openCard === 'deprivation' ? null : 'deprivation')}>
                 <div>
                   <p className={styles.cardTitle}>Deprivation index</p>
                   
@@ -564,29 +584,31 @@ useEffect(() => {
                 </div>
               </div>
 
-              <div className={styles.progressBar}>
-                <div 
-                  className={styles.progressFill} 
-                    style={{ width: animate ? `${scores?.deprivationScore * 10}%` : '0%' }}
-                  ></div>
-              </div>
+              {(!isMobile || openCard === 'deprivation') && (
+                <>
+                  <div className={styles.progressBar}>
+                    <div 
+                      className={styles.progressFill} 
+                      style={{ width: animate ? `${scores?.deprivationScore * 10}%` : '0%' }}
+                    ></div>
+                  </div>
 
-              <div className={styles.stats}>
-                <div className={styles.stat}>
-                  <p className={styles.statLabel}>IMD decile</p>
-                  <p className={styles.statValue}>{rank ? Math.ceil((rank / 32844) * 10) : null}</p>
-                </div>
-                <div className={styles.stat}>
-                  <p className={styles.statLabel}>National rank</p>
-                  <p className={styles.statValue}>{rank ? rank : null} out of 32,844</p>
-                </div>
-                <div className={styles.stat}>
-                  <p className={styles.statLabel}>Parliamentary constituency</p>
-                  <p className={styles.statValue}>{locationData ? locationData.result.parliamentary_constituency_2024 : null}</p>
-                </div>
-              </div>
-              <button className={styles.moreInfoButton} onClick={() => setShowMoreInfo(!showMoreInfo)}>What is the Deprivation Index?</button>
-              {showMoreInfo && (
+                  <div className={styles.stats}>
+                    <div className={styles.stat}>
+                      <p className={styles.statLabel}>IMD decile</p>
+                      <p className={styles.statValue}>{rank ? Math.ceil((rank / 32844) * 10) : null}</p>
+                    </div>
+                    <div className={styles.stat}>
+                      <p className={styles.statLabel}>National rank</p>
+                      <p className={styles.statValue}>{rank ? rank : null} out of 32,844</p>
+                    </div>
+                    <div className={styles.stat}>
+                      <p className={styles.statLabel}>Parliamentary constituency</p>
+                      <p className={styles.statValue}>{locationData ? locationData.result.parliamentary_constituency_2024 : null}</p>
+                    </div>
+                  </div>
+                  <button className={styles.moreInfoButton} onClick={() => setShowMoreInfo(!showMoreInfo)}>What is the Deprivation Index?</button>
+                  {showMoreInfo && (
                     <div className={styles.moreInfoOverlay}>
                       <div className={styles.moreInfoContent}>
                         <p>The Deprivation Index is a measure of relative deprivation in England, based on factors such as income, employment, health, education, housing, and crime. It is calculated by the Office for National Statistics (ONS) and is used to identify areas that may require additional support or resources. Decile 1 means the area is in the most deprived 10% nationally. Decile 10 means least deprived.</p>
@@ -594,6 +616,8 @@ useEffect(() => {
                       </div>
                     </div>
                   )}
+                </>
+              )}
             </div>
           </>
         )
