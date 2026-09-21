@@ -18,8 +18,8 @@ export default function Nav() {
             </Link>
         </div>
         <ul className={`${styles.navList} ${menuOpen ? styles.navListOpen : ""}`}>          
-          <li className={styles.navItem}><Link to="/" onClick={() => setMenuOpen(false)}>How it works</Link></li>
-          <li className={styles.navItem}><Link to="/" onClick={() => setMenuOpen(false)}>About</Link></li>
+          <li className={styles.navItem}><Link to="/howitworks" onClick={() => setMenuOpen(false)}>How it works</Link></li>
+          <li className={styles.navItem}><Link to="/login" onClick={() => setMenuOpen(false)}>Log in</Link></li>
         </ul>
 
         <button 

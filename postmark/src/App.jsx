@@ -3,6 +3,8 @@ import Home from "./pages/Home";
 import Results from "./pages/Results";
 import Criteria from "./pages/Criteria";
 import Nav from "./components/Nav";
+import Login from "./pages/Login";
+import HowItWorks from "./pages/HowItWorks";
 import { useState } from "react";
 
 function Layout() {
@@ -29,6 +31,8 @@ export default function App() {
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Home criteria={criteria} setCriteria={setCriteria}/>} />
+          <Route path="/login" element={<Login criteria={criteria} setCriteria={setCriteria}/>} />
+          <Route path="/howitworks" element={<HowItWorks />} />
           <Route path="/results" element={<Results criteria={criteria} />} />
           <Route path="/criteria" element={<Criteria criteria={criteria} setCriteria={setCriteria}/>} />
         </Route>
