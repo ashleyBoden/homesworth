@@ -69,4 +69,12 @@
     .hamburger {
         display: block;
     }
+
+    .home a {
+        font-size: 1.1rem;        
+    }
+
+    .nav {
+        padding: 1rem 1.5rem;
+    }
 }

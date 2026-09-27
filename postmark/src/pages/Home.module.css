@@ -97,7 +97,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-    margin-bottom: 1.5rem;
+    margin: 1rem 0 1rem 0;
 }
 
 .criteria a {
@@ -177,5 +177,9 @@
 
     .suggestions {
         width: 30%;
+    }
+
+    .criteria {
+        margin: 2rem 0 1rem 0;
     }
 }
