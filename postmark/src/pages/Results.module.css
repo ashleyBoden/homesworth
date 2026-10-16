@@ -318,6 +318,48 @@
     scale: 1.025;
 }
 
+.smallCardsContainer {
+    display: flex;
+    flex-direction: row;
+    gap: 40px;
+    width: 100%;
+}
+
+.smallCard {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 20px;
+    margin: 20px 0px;
+    box-shadow: 0 0 5px rgba(65, 105, 225, 0.3);
+    flex: 1;
+}
+
+.smallCardHeading {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+}
+
+.smallCardCount {
+    font-size: 3rem;
+    font-weight: bold;
+    color: var(--text-primary)
+}
+
+.smallCardFooter {
+    color: var(--text-secondary);
+    font-weight: bold;
+    margin-bottom: 10px;
+    margin-top: auto;
+
+}
+
 @media (max-width: 768px) {
     .header {
         flex-direction: column;

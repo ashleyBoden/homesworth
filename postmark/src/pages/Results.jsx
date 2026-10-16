@@ -11,6 +11,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { OverpassAPI } from "../utils/OverpassAPI";
+import { School, Dumbbell, ShoppingCart } from "lucide-react";
+import { straightLineDistance, findNearestCity, findNearestAmenity, distanceMiles } from "../utils/distance";
+import { CITY_CENTRES } from "../constants/cities";
 
 //property data processing functions
 function formatPostcode(raw) {
@@ -110,69 +113,6 @@ function formatMonth(monthStr) {
   return date.toLocaleString("en-GB", { month: "long", year: "numeric" });
 }
 
-//Commute time functions
-const CITY_CENTRES = {
-  London: { lat: 51.5074, lng: -0.1278 },
-  Manchester: { lat: 53.4808, lng: -2.2426 },
-  Birmingham: { lat: 52.4862, lng: -1.8904 },
-  Leeds: { lat: 53.8008, lng: -1.5491 },
-  Sheffield: { lat: 53.3811, lng: -1.4701 },
-  Bristol: { lat: 51.4545, lng: -2.5879 },
-  Edinburgh: { lat: 55.9533, lng: -3.1883 },
-  Glasgow: { lat: 55.8642, lng: -4.2518 },
-  Liverpool: { lat: 53.4084, lng: -2.9916 },
-  Newcastle: { lat: 54.9783, lng: -1.6178 },
-  Nottingham: { lat: 52.9548, lng: -1.1581 },
-  Cardiff: { lat: 51.4816, lng: -3.1791 },
-  Leicester: { lat: 52.6369, lng: -1.1398 },
-  Coventry: { lat: 52.4068, lng: -1.5197 },
-  Bradford: { lat: 53.796, lng: -1.7594 },
-  Hull: { lat: 53.7676, lng: -0.3274 },
-  Stoke: { lat: 53.0027, lng: -2.1794 },
-  Derby: { lat: 52.9225, lng: -1.4746 },
-  Southampton: { lat: 50.9097, lng: -1.4044 },
-  Portsmouth: { lat: 50.8198, lng: -1.088 },
-  Norwich: { lat: 52.6309, lng: -1.2974 },
-  Oxford: { lat: 51.752, lng: -1.2577 },
-  Cambridge: { lat: 52.2053, lng: 0.1218 },
-  Brighton: { lat: 50.8229, lng: -0.1363 },
-  Exeter: { lat: 50.7184, lng: -3.5339 },
-  Plymouth: { lat: 50.3755, lng: -4.1427 },
-  Swansea: { lat: 51.6214, lng: -3.9436 },
-  Aberdeen: { lat: 57.1497, lng: -2.0943 },
-  Dundee: { lat: 56.462, lng: -2.9707 },
-  Belfast: { lat: 54.5973, lng: -5.9301 },
-  Middlesbrough: { lat: 54.5742, lng: -1.235 },
-  Sunderland: { lat: 54.9069, lng: -1.3838 },
-};
-
-export function straightLineDistance(lat1, lng1, lat2, lng2) {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function compareDistances(a, b) {
-  return a.distance - b.distance;
-}
-
-function findNearestCity(lat, lng) {
-  const withDistances = Object.entries(CITY_CENTRES).map(([name, coords]) => ({
-    name,
-    distance: straightLineDistance(lat, lng, coords.lat, coords.lng),
-  }));
-
-  const sorted = withDistances.sort(compareDistances);
-  return sorted[0].name;
-}
-
 export default function Results({ criteria }) {
   const location = useLocation();
   const { postcode } = location.state;
@@ -217,14 +157,7 @@ export default function Results({ criteria }) {
         const { latitude, longitude } = postcodeData.result;
 
         const nearestCity = findNearestCity(latitude, longitude);
-        const cityCoords = CITY_CENTRES[nearestCity];
-        const distanceKm = straightLineDistance(
-          latitude,
-          longitude,
-          cityCoords.lat,
-          cityCoords.lng,
-        );
-        const distanceMiles = Math.round(distanceKm * 0.621371);
+        const miles = distanceMiles(nearestCity.distance);
 
         const overpassQuery = `
           [out:json];
@@ -303,8 +236,8 @@ export default function Results({ criteria }) {
 
         setCrimeData(crimeJson);
         setCommuteData({
-          nearestCity,
-          distanceMiles,
+          nearestCity: nearestCity.name,
+          miles,
           nearbyStations,
           hasTram,
         });
@@ -369,7 +302,7 @@ export default function Results({ criteria }) {
             currentPrice,
             priceChange: parseFloat(priceChange),
             total: total,
-            distanceMiles: commuteData.distanceMiles,
+            miles: commuteData.miles,
             deprivationRank: rank,
           },
           criteria,
@@ -377,12 +310,7 @@ export default function Results({ criteria }) {
       : null;
 
   // loading
-  const isLoading =
-    !locationData ||
-    !crimeData ||
-    !priceData ||
-    !commuteData ||
-    (!amenities && !amenitiesFailed);
+  const isLoading = !locationData || !crimeData || !priceData || !commuteData || (!amenities && !amenitiesFailed);
 
   useEffect(() => {
     if (!isLoading) {
@@ -412,32 +340,43 @@ export default function Results({ criteria }) {
     getOverpass();
   }, [postcode]);
 
-  function findNearest(places) {
-    let closest = null;
-
-    for (const place of places) {
-      if (!closest || place.distance < closest.distance) {
-        closest = place;
-      }
-    }
-
-    return closest;
-  }
-
-  console.clear();
+    const countOfAmenities = [
+    {
+      name: "Supermarkets",
+      data: amenities?.supermarketData,
+      count: amenities?.supermarketData.length,
+      icon: <ShoppingCart stroke="#0D9488" strokeWidth="2" size="48"/>
+    },
+    {
+      name: "Gyms",
+      data: amenities?.gymData,
+      count: amenities?.gymData.length,
+      icon: <Dumbbell stroke="#0D9488" strokeWidth="2" size="48"/>
+    },
+    {
+      name: "Schools",
+      data: amenities?.schoolData,
+      count: amenities?.schoolData.length,
+      icon: <School stroke="#0D9488" strokeWidth="2" size="48"/>
+    },
+  ];
 
   console.table(amenities?.supermarketData);
   console.table(amenities?.gymData);
   console.table(amenities?.schoolData);
   amenities?.gymData
-    ? console.log(`Closest supermarket: ${findNearest(amenities?.supermarketData).name}`)
+    ? console.log(
+        `Closest supermarket: ${findNearestAmenity(amenities?.supermarketData).name}`,
+      )
     : console.log("Finding closest supermarket...");
   amenities?.gymData
-    ? console.log(`Closest gym: ${findNearest(amenities?.gymData).name}`)
+    ? console.log(`Closest gym: ${findNearestAmenity(amenities?.gymData).name}`)
     : console.log("Finding closest gym...");
-    amenities?.gymData
-      ? console.log(`Closest school: ${findNearest(amenities?.schoolData).name}`)
-      : console.log("Finding closest school...");
+  amenities?.gymData
+    ? console.log(
+        `Closest school: ${findNearestAmenity(amenities?.schoolData).name}`,
+      )
+    : console.log("Finding closest school...");
   console.log("amenitiesFailed:", amenitiesFailed);
   console.log("------------------------------------------------------");
 
@@ -537,6 +476,28 @@ export default function Results({ criteria }) {
               <p className={styles.scoreName}>HOMESWORTH SCORE</p>
             </div>
           </div>
+
+          {amenities ?
+          <div className={styles.smallCardsContainer}>
+            {countOfAmenities
+              .sort((a, b) => b.count - a.count)
+              .map((amenity) => (
+                <div className={styles.smallCard}>
+                  <div className={styles.smallCardHeading}>
+                    <p key={amenity.name} className={styles.amenityName}>
+                      {amenity.name}
+                    </p>
+                    {amenity.icon}
+                  </div>
+                  <p className={styles.smallCardCount}>{amenity.count}</p>
+                  <p className={styles.smallCardFooter}>
+                    {findNearestAmenity(amenity.data).name} ·{" "}
+                    {parseFloat(findNearestAmenity(amenity.data).distance).toFixed(1)}
+                    {" "}km away
+                  </p>
+                </div>
+              ))}
+          </div> : null}
 
           <div className={styles.card}>
             <div
@@ -751,7 +712,7 @@ export default function Results({ criteria }) {
                   <div className={styles.stat}>
                     <p className={styles.statLabel}>Nearest city</p>
                     <p className={styles.statValue}>
-                      {`${commuteData?.nearestCity} · ${commuteData.distanceMiles} mi` ||
+                      {`${commuteData?.nearestCity} · ${commuteData.miles} mi` ||
                         "Loading..."}
                     </p>
                   </div>

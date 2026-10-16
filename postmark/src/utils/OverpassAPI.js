@@ -1,4 +1,4 @@
-import { straightLineDistance } from "../pages/Results";
+import { straightLineDistance } from "../utils/distance";
 
 export async function OverpassAPI(postcode) {
   const res = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
