@@ -14,51 +14,11 @@ import { OverpassAPI } from "../utils/OverpassAPI";
 import { School, Dumbbell, ShoppingCart } from "lucide-react";
 import { findNearestCity, findNearestAmenity, distanceMiles } from "../utils/distance";
 import { getPriceSummary, getLast5Years, housePriceData } from "../utils/prices";
-
-//property data processing functions
-function formatPostcode(raw) {
-  const clean = raw.replace(/\s+/g, "").toUpperCase();
-  return clean.slice(0, -3) + " " + clean.slice(-3);
-}
+import { formatCategory, formatMonth, formatPostcode } from "../utils/formatting";
+import { processCrimeData } from "../utils/crime";
+import { maxDeprivationRank } from "../constants/maxDeprivationRank";
 
 const years = getLast5Years();
-
-//Crime data processing functions
-function formatCategory(category) {
-  const withSpaces = category.replace(/-/g, " ");
-  return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1);
-}
-
-function processCrimeData(items) {
-  if (!items || items.length === 0) return null;
-
-  const total = items.length;
-
-  const tally = {};
-  items.forEach((item) => {
-    const category = item.category;
-    tally[category] = (tally[category] || 0) + 1;
-  });
-  const mostCommonCategory = Object.keys(tally).sort(
-    (a, b) => tally[b] - tally[a],
-  )[0];
-
-  const uniqueMonths = new Set(items.map((crime) => crime.month));
-  const perMonth = Math.round(total / uniqueMonths.size);
-
-  return {
-    total,
-    mostCommonCategory,
-  };
-}
-
-function formatMonth(monthStr) {
-  if (!monthStr) return null;
-
-  const [year, month] = monthStr.split("-");
-  const date = new Date(year, month - 1);
-  return date.toLocaleString("en-GB", { month: "long", year: "numeric" });
-}
 
 export default function Results({ criteria }) {
   const location = useLocation();
@@ -270,25 +230,6 @@ export default function Results({ criteria }) {
       icon: <School stroke="#0D9488" strokeWidth="2" size="48"/>
     },
   ];
-
-  console.table(amenities?.supermarketData);
-  console.table(amenities?.gymData);
-  console.table(amenities?.schoolData);
-  amenities?.gymData
-    ? console.log(
-        `Closest supermarket: ${findNearestAmenity(amenities?.supermarketData).name}`,
-      )
-    : console.log("Finding closest supermarket...");
-  amenities?.gymData
-    ? console.log(`Closest gym: ${findNearestAmenity(amenities?.gymData).name}`)
-    : console.log("Finding closest gym...");
-  amenities?.gymData
-    ? console.log(
-        `Closest school: ${findNearestAmenity(amenities?.schoolData).name}`,
-      )
-    : console.log("Finding closest school...");
-  console.log("amenitiesFailed:", amenitiesFailed);
-  console.log("------------------------------------------------------");
 
   function scoreDotClass(score) {
     if (score == 0.0) return styles.scoreDotLow;
@@ -690,13 +631,13 @@ export default function Results({ criteria }) {
                   <div className={styles.stat}>
                     <p className={styles.statLabel}>IMD decile</p>
                     <p className={styles.statValue}>
-                      {rank ? Math.ceil((rank / 32844) * 10) : null}
+                      {rank ? Math.ceil((rank / maxDeprivationRank) * 10) : null}
                     </p>
                   </div>
                   <div className={styles.stat}>
                     <p className={styles.statLabel}>National rank</p>
                     <p className={styles.statValue}>
-                      {rank ? rank : null} out of 32,844
+                      {rank ? rank : null} out of {maxDeprivationRank.toLocaleString()}
                     </p>
                   </div>
                   <div className={styles.stat}>
