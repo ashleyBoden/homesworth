@@ -119,6 +119,7 @@
     align-self: flex-start;
     transition: transform 0.2s ease, color 0.2s ease;
     color: var(--text-secondary);
+    text-decoration: none;
 }
 
 .back:hover {
