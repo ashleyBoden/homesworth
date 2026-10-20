@@ -12,66 +12,13 @@ import {
 } from "recharts";
 import { OverpassAPI } from "../utils/OverpassAPI";
 import { School, Dumbbell, ShoppingCart } from "lucide-react";
-import { straightLineDistance, findNearestCity, findNearestAmenity, distanceMiles } from "../utils/distance";
-import { CITY_CENTRES } from "../constants/cities";
+import { findNearestCity, findNearestAmenity, distanceMiles } from "../utils/distance";
+import { getPriceSummary, getLast5Years, housePriceData } from "../utils/prices";
 
 //property data processing functions
 function formatPostcode(raw) {
   const clean = raw.replace(/\s+/g, "").toUpperCase();
   return clean.slice(0, -3) + " " + clean.slice(-3);
-}
-
-function processYearData(items) {
-  if (!items || items.length === 0) return null;
-
-  const prices = items.map((item) => item.pricePaid).sort((a, b) => a - b);
-  const median = Math.floor(prices.length / 2);
-  return prices[median];
-}
-
-function getMostCommonType(items) {
-  if (!items || items.length === 0) return null;
-
-  const tally = {};
-
-  items.forEach((item) => {
-    const type = item.propertyType.prefLabel[0]._value;
-    tally[type] = (tally[type] || 0) + 1;
-  });
-
-  const mostCommon = Object.keys(tally).sort((a, b) => tally[b] - tally[a])[0];
-  return mostCommon;
-}
-
-function getLast5Years() {
-  const currentYear = new Date().getFullYear();
-  return [
-    currentYear - 4,
-    currentYear - 3,
-    currentYear - 2,
-    currentYear - 1,
-    currentYear,
-  ];
-}
-
-function getPriceSummary(vsUKAverage, priceChange) {
-  const affordability =
-    vsUKAverage < -50000
-      ? "significantly more affordable than the UK average"
-      : vsUKAverage < 0
-        ? "below the UK average"
-        : vsUKAverage < 50000
-          ? "close to the UK average"
-          : "above the UK average";
-
-  const trend =
-    priceChange > 5
-      ? "with strong price growth over the past few years"
-      : priceChange > 0
-        ? "with modest price growth"
-        : "with prices remaining flat or declining";
-
-  return `${affordability.charAt(0).toUpperCase() + affordability.slice(1)}, ${trend}.`;
 }
 
 const years = getLast5Years();
@@ -118,10 +65,15 @@ export default function Results({ criteria }) {
   const { postcode } = location.state;
   const [locationData, setLocationData] = useState(null);
   const [error, setError] = useState(null);
+
   const [priceData, setPriceData] = useState(null);
+  const housePriceStats = priceData ? housePriceData(priceData) : null;
+  const { currentPrice, priceChange, vsUKAverage, vsUKAverageFormatted, mostCommonType, priceChartData } = housePriceStats || {};
+
   const [crimeData, setCrimeData] = useState(null);
   const crimeStats = crimeData ? processCrimeData(crimeData) : null;
   const { total, mostCommonCategory } = crimeStats || {}; //Crime data
+
   const [commuteData, setCommuteData] = useState(null);
   const [showPriceTrend, setShowPriceTrend] = useState(false);
   const [animate, setAnimate] = useState(false);
@@ -249,48 +201,6 @@ export default function Results({ criteria }) {
 
     fetchAll();
   }, [postcode]);
-
-  //House median price
-  const priceByYear = priceData
-    ? priceData.map((yearData) => processYearData(yearData.result.items))
-    : null;
-
-  //12 month price change
-  const currentPrice = priceByYear?.findLast((price) => price !== null);
-  const previousPrice = priceByYear
-    ?.slice(0, -1)
-    .findLast((price) => price !== null);
-  const priceChange =
-    currentPrice && previousPrice
-      ? (((currentPrice - previousPrice) / previousPrice) * 100).toFixed(1)
-      : null;
-
-  //vs UK Median
-  const currentUKMedianPrice = 285000;
-  const vsUKAverage = currentPrice ? currentPrice - currentUKMedianPrice : null;
-  const vsUKAverageFormatted =
-    vsUKAverage === null
-      ? null
-      : vsUKAverage >= 0
-        ? `+£${vsUKAverage.toLocaleString()}`
-        : `-£${Math.abs(vsUKAverage).toLocaleString()}`;
-
-  //Most common property type
-  const allTransactions = priceData
-    ? priceData.flatMap((yearData) => yearData.result.items || [])
-    : [];
-  const mostCommonType = getMostCommonType(allTransactions);
-
-  //Price trend graph
-  const maxPrice = priceByYear
-    ? Math.max(...priceByYear.filter((p) => p !== null))
-    : 0;
-  const priceChartData = years
-    .map((year, index) => ({
-      year: year.toString(),
-      price: priceByYear?.[index] ?? null,
-    }))
-    .filter((d) => d.price !== null);
 
   //National rank
   const rank = locationData?.result.index_of_multiple_deprivation;
