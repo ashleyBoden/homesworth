@@ -10,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { OverpassAPI } from "../utils/OverpassAPI";
+import { OverpassAPI } from "../api/OverpassAPI";
 import { School, Dumbbell, ShoppingCart } from "lucide-react";
 import { findNearestCity, findNearestAmenity, distanceMiles } from "../utils/distance";
 import { getPriceSummary, getLast5Years, housePriceData } from "../utils/prices";
