@@ -17,6 +17,7 @@ import { getPriceSummary, getLast5Years, housePriceData } from "../utils/prices"
 import { formatCategory, formatMonth, formatPostcode } from "../utils/formatting";
 import { processCrimeData } from "../utils/crime";
 import { maxDeprivationRank } from "../constants/maxDeprivationRank";
+import { getPostcodeData } from "../api/postcodeAPI";
 
 const years = getLast5Years();
 
@@ -52,19 +53,15 @@ export default function Results({ criteria }) {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const postcodeRes = await fetch(
-          `https://api.postcodes.io/postcodes/${postcode}`,
-        );
-        const postcodeData = await postcodeRes.json();
-
-        if (postcodeData.status !== 200) {
-          setError("Postcode not found. Please check and try again.");
-          return;
-        }
+        const postcodeData = await getPostcodeData(postcode)
 
         setLocationData(postcodeData);
 
+        console.log(postcodeData);
+
+
         const locality = postcodeData.result.admin_ward.toUpperCase();
+        console.log('Locality: ', {locality});
 
         const { latitude, longitude } = postcodeData.result;
 
@@ -155,7 +152,7 @@ export default function Results({ criteria }) {
         });
       } catch (err) {
         console.error("fetchAll error: ", err);
-        setError("Something went wrong. Please try again.");
+        setError(err.message);
       }
     };
 
