@@ -18,6 +18,7 @@ import { formatCategory, formatMonth, formatPostcode } from "../utils/formatting
 import { processCrimeData } from "../utils/crime";
 import { maxDeprivationRank } from "../constants/maxDeprivationRank";
 import { getPostcodeData } from "../api/postcodeAPI";
+import { getCrimeData } from "../api/crimeAPI";
 
 const years = getLast5Years();
 
@@ -53,18 +54,11 @@ export default function Results({ criteria }) {
   useEffect(() => {
     const fetchAll = async () => {
       try {
+
         const postcodeData = await getPostcodeData(postcode)
-
         setLocationData(postcodeData);
-
-        console.log(postcodeData);
-
-
         const locality = postcodeData.result.admin_ward.toUpperCase();
-        console.log('Locality: ', {locality});
-
         const { latitude, longitude } = postcodeData.result;
-
         const nearestCity = findNearestCity(latitude, longitude);
         const miles = distanceMiles(nearestCity.distance);
 
@@ -79,20 +73,19 @@ export default function Results({ criteria }) {
         `;
 
         //Land registry and Crime data APIs
-        const [crimeRes, ...priceResByYear] = await Promise.all([
-          fetch(
-            `https://data.police.uk/api/crimes-street/all-crime?lat=${latitude}&lng=${longitude}`,
-          ),
+        const [crimeDataJson, ...priceResByYear] = await Promise.all([
+          getCrimeData(latitude, longitude),
           ...years.map((year) =>
             fetch(
               `https://landregistry.data.gov.uk/data/ppi/transaction-record.json?propertyAddress.locality=${locality}&min-transactionDate=${year}-01-01&max-transactionDate=${year}-12-31&_page=0&_pageSize=50`,
             ),
           ),
         ]);
-
+        
         // Transport - separate so it doesn't block everything else
         let nearbyStations = null;
         let hasTram = null;
+        
 
         try {
           const transportRes = await fetch(
@@ -116,8 +109,6 @@ export default function Results({ criteria }) {
         } catch {
           console.log("Transport data unavailable");
         }
-
-        const crimeJson = await crimeRes.json();
         const priceJsonByYear = await Promise.all(
           priceResByYear.map((r) => r.json()),
         );
@@ -143,7 +134,7 @@ export default function Results({ criteria }) {
           setPriceData(priceJsonByYear);
         }
 
-        setCrimeData(crimeJson);
+        setCrimeData(crimeDataJson);
         setCommuteData({
           nearestCity: nearestCity.name,
           miles,
