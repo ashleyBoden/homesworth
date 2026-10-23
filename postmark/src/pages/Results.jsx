@@ -12,13 +12,26 @@ import {
 } from "recharts";
 import { OverpassAPI } from "../api/OverpassAPI";
 import { School, Dumbbell, ShoppingCart } from "lucide-react";
-import { findNearestCity, findNearestAmenity, distanceMiles } from "../utils/distance";
-import { getPriceSummary, getLast5Years, housePriceData } from "../utils/prices";
-import { formatCategory, formatMonth, formatPostcode } from "../utils/formatting";
+import {
+  findNearestCity,
+  findNearestAmenity,
+  distanceMiles,
+} from "../utils/distance";
+import {
+  getPriceSummary,
+  getLast5Years,
+  housePriceData,
+} from "../utils/prices";
+import {
+  formatCategory,
+  formatMonth,
+  formatPostcode,
+} from "../utils/formatting";
 import { processCrimeData } from "../utils/crime";
 import { maxDeprivationRank } from "../constants/maxDeprivationRank";
 import { getPostcodeData } from "../api/postcodeAPI";
 import { getCrimeData } from "../api/crimeAPI";
+import { getLandRegistryData } from "../api/landRegistry";
 
 const years = getLast5Years();
 
@@ -30,7 +43,14 @@ export default function Results({ criteria }) {
 
   const [priceData, setPriceData] = useState(null);
   const housePriceStats = priceData ? housePriceData(priceData) : null;
-  const { currentPrice, priceChange, vsUKAverage, vsUKAverageFormatted, mostCommonType, priceChartData } = housePriceStats || {};
+  const {
+    currentPrice,
+    priceChange,
+    vsUKAverage,
+    vsUKAverageFormatted,
+    mostCommonType,
+    priceChartData,
+  } = housePriceStats || {};
 
   const [crimeData, setCrimeData] = useState(null);
   const crimeStats = crimeData ? processCrimeData(crimeData) : null;
@@ -54,13 +74,13 @@ export default function Results({ criteria }) {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-
-        const postcodeData = await getPostcodeData(postcode)
+        const postcodeData = await getPostcodeData(postcode);
         setLocationData(postcodeData);
         const locality = postcodeData.result.admin_ward.toUpperCase();
         const { latitude, longitude } = postcodeData.result;
         const nearestCity = findNearestCity(latitude, longitude);
         const miles = distanceMiles(nearestCity.distance);
+        const town = postcodeData.result.admin_district.toUpperCase();
 
         const overpassQuery = `
           [out:json];
@@ -73,19 +93,14 @@ export default function Results({ criteria }) {
         `;
 
         //Land registry and Crime data APIs
-        const [crimeDataJson, ...priceResByYear] = await Promise.all([
+        const [crimeDataJson, landRegistryData] = await Promise.all([
           getCrimeData(latitude, longitude),
-          ...years.map((year) =>
-            fetch(
-              `https://landregistry.data.gov.uk/data/ppi/transaction-record.json?propertyAddress.locality=${locality}&min-transactionDate=${year}-01-01&max-transactionDate=${year}-12-31&_page=0&_pageSize=50`,
-            ),
-          ),
+          getLandRegistryData(locality, town, years),
         ]);
-        
+
         // Transport - separate so it doesn't block everything else
         let nearbyStations = null;
         let hasTram = null;
-        
 
         try {
           const transportRes = await fetch(
@@ -109,30 +124,8 @@ export default function Results({ criteria }) {
         } catch {
           console.log("Transport data unavailable");
         }
-        const priceJsonByYear = await Promise.all(
-          priceResByYear.map((r) => r.json()),
-        );
 
-        const noPriceByYear = priceJsonByYear.every(
-          (year) => year.result.items.length === 0,
-        );
-
-        if (noPriceByYear) {
-          const town = postcodeData.result.admin_district.toUpperCase();
-          const fallbackResults = await Promise.all(
-            years.map((year) =>
-              fetch(
-                `https://landregistry.data.gov.uk/data/ppi/transaction-record.json?propertyAddress.town=${town}&min-transactionDate=${year}-01-01&max-transactionDate=${year}-12-31&_page=0&_pageSize=50`,
-              ),
-            ),
-          );
-          const fallbackJsonByYear = await Promise.all(
-            fallbackResults.map((r) => r.json()),
-          );
-          setPriceData(fallbackJsonByYear);
-        } else {
-          setPriceData(priceJsonByYear);
-        }
+        setPriceData(landRegistryData);
 
         setCrimeData(crimeDataJson);
         setCommuteData({
@@ -168,7 +161,12 @@ export default function Results({ criteria }) {
       : null;
 
   // loading
-  const isLoading = !locationData || !crimeData || !priceData || !commuteData || (!amenities && !amenitiesFailed);
+  const isLoading =
+    !locationData ||
+    !crimeData ||
+    !priceData ||
+    !commuteData ||
+    (!amenities && !amenitiesFailed);
 
   useEffect(() => {
     if (!isLoading) {
@@ -198,24 +196,24 @@ export default function Results({ criteria }) {
     getOverpass();
   }, [postcode]);
 
-    const countOfAmenities = [
+  const countOfAmenities = [
     {
       name: "Supermarkets",
       data: amenities?.supermarketData,
       count: amenities?.supermarketData.length,
-      icon: <ShoppingCart stroke="#0D9488" strokeWidth="2" size="48"/>
+      icon: <ShoppingCart stroke="#0D9488" strokeWidth="2" size="48" />,
     },
     {
       name: "Gyms",
       data: amenities?.gymData,
       count: amenities?.gymData.length,
-      icon: <Dumbbell stroke="#0D9488" strokeWidth="2" size="48"/>
+      icon: <Dumbbell stroke="#0D9488" strokeWidth="2" size="48" />,
     },
     {
       name: "Schools",
       data: amenities?.schoolData,
       count: amenities?.schoolData.length,
-      icon: <School stroke="#0D9488" strokeWidth="2" size="48"/>
+      icon: <School stroke="#0D9488" strokeWidth="2" size="48" />,
     },
   ];
 
@@ -316,27 +314,30 @@ export default function Results({ criteria }) {
             </div>
           </div>
 
-          {amenities ?
-          <div className={styles.smallCardsContainer}>
-            {countOfAmenities
-              .sort((a, b) => b.count - a.count)
-              .map((amenity) => (
-                <div className={styles.smallCard}>
-                  <div className={styles.smallCardHeading}>
-                    <p key={amenity.name} className={styles.amenityName}>
-                      {amenity.name}
+          {amenities ? (
+            <div className={styles.smallCardsContainer}>
+              {countOfAmenities
+                .sort((a, b) => b.count - a.count)
+                .map((amenity) => (
+                  <div className={styles.smallCard}>
+                    <div className={styles.smallCardHeading}>
+                      <p key={amenity.name} className={styles.amenityName}>
+                        {amenity.name}
+                      </p>
+                      {amenity.icon}
+                    </div>
+                    <p className={styles.smallCardCount}>{amenity.count}</p>
+                    <p className={styles.smallCardFooter}>
+                      {findNearestAmenity(amenity.data).name} ·{" "}
+                      {parseFloat(
+                        findNearestAmenity(amenity.data).distance,
+                      ).toFixed(1)}{" "}
+                      km away
                     </p>
-                    {amenity.icon}
                   </div>
-                  <p className={styles.smallCardCount}>{amenity.count}</p>
-                  <p className={styles.smallCardFooter}>
-                    {findNearestAmenity(amenity.data).name} ·{" "}
-                    {parseFloat(findNearestAmenity(amenity.data).distance).toFixed(1)}
-                    {" "}km away
-                  </p>
-                </div>
-              ))}
-          </div> : null}
+                ))}
+            </div>
+          ) : null}
 
           <div className={styles.card}>
             <div
@@ -619,13 +620,16 @@ export default function Results({ criteria }) {
                   <div className={styles.stat}>
                     <p className={styles.statLabel}>IMD decile</p>
                     <p className={styles.statValue}>
-                      {rank ? Math.ceil((rank / maxDeprivationRank) * 10) : null}
+                      {rank
+                        ? Math.ceil((rank / maxDeprivationRank) * 10)
+                        : null}
                     </p>
                   </div>
                   <div className={styles.stat}>
                     <p className={styles.statLabel}>National rank</p>
                     <p className={styles.statValue}>
-                      {rank ? rank : null} out of {maxDeprivationRank.toLocaleString()}
+                      {rank ? rank : null} out of{" "}
+                      {maxDeprivationRank.toLocaleString()}
                     </p>
                   </div>
                   <div className={styles.stat}>
