@@ -42,7 +42,7 @@ export function findNearestAmenity(places) {
 }
 
 export function distanceMiles(distanceKm) {
-  const distanceInMiles = Math.round(distanceKm * 0.621371);
+  const distanceInMiles = distanceKm * 0.621371;
 
-  return distanceInMiles;
+  return Number.parseFloat(distanceInMiles).toFixed(2);
 }

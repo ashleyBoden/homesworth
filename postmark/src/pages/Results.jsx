@@ -62,8 +62,8 @@ export default function Results({ criteria }) {
   const [showMoreInfo, setShowMoreInfo] = useState(false);
   const [openCard, setOpenCard] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [amenities, setAmenities] = useState(null);
-  const [amenitiesFailed, setAmenitiesFailed] = useState(false);
+  const [overpassData, setOverpassData] = useState(null);
+  const [overpassApiFailed, setOverpassApiFailed] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -82,57 +82,26 @@ export default function Results({ criteria }) {
         const miles = distanceMiles(nearestCity.distance);
         const town = postcodeData.result.admin_district.toUpperCase();
 
-        const overpassQuery = `
-          [out:json];
-          (
-            node["railway"="station"](around:3000,${latitude},${longitude});
-            node["railway"="halt"](around:3000,${latitude},${longitude});
-            node["railway"="tram_stop"](around:3000,${latitude},${longitude});
-          );
-          out;
-        `;
-
         //Land registry and Crime data APIs
         const [crimeDataJson, landRegistryData] = await Promise.all([
           getCrimeData(latitude, longitude),
           getLandRegistryData(locality, town, years),
         ]);
 
-        // Transport - separate so it doesn't block everything else
-        let nearbyStations = null;
-        let hasTram = null;
-
         try {
-          const transportRes = await fetch(
-            "https://overpass-api.de/api/interpreter",
-            {
-              method: "POST",
-              body: overpassQuery,
-            },
-          );
-          const transportJson = await transportRes.json();
-
-          const stations = transportJson.elements.filter(
-            (e) => e.tags.railway === "station" || e.tags.railway === "halt",
-          );
-          const tramStops = transportJson.elements.filter(
-            (e) => e.tags.railway === "tram_stop",
-          );
-
-          nearbyStations = stations.length;
-          hasTram = tramStops.length > 0;
-        } catch {
-          console.log("Transport data unavailable");
+          const overpassJson = await OverpassAPI(latitude, longitude);
+          setOverpassData(overpassJson);
+          setOverpassApiFailed(false);
+        } catch (err) {
+          console.error("Overpass API error: ", err);
+          setOverpassApiFailed(true);
         }
 
         setPriceData(landRegistryData);
-
         setCrimeData(crimeDataJson);
         setCommuteData({
           nearestCity: nearestCity.name,
           miles,
-          nearbyStations,
-          hasTram,
         });
       } catch (err) {
         console.error("fetchAll error: ", err);
@@ -166,7 +135,7 @@ export default function Results({ criteria }) {
     !crimeData ||
     !priceData ||
     !commuteData ||
-    (!amenities && !amenitiesFailed);
+    (!overpassData && !overpassApiFailed);
 
   useEffect(() => {
     if (!isLoading) {
@@ -182,37 +151,23 @@ export default function Results({ criteria }) {
     return styles.scorePillLow;
   }
 
-  useEffect(() => {
-    async function getOverpass() {
-      try {
-        const data = await OverpassAPI(postcode);
-        setAmenities(data);
-        setAmenitiesFailed(false);
-      } catch (err) {
-        setAmenitiesFailed(true);
-      }
-    }
-
-    getOverpass();
-  }, [postcode]);
-
   const countOfAmenities = [
     {
       name: "Supermarkets",
-      data: amenities?.supermarketData,
-      count: amenities?.supermarketData.length,
+      data: overpassData?.supermarketData,
+      count: overpassData?.supermarketData.length,
       icon: <ShoppingCart stroke="#0D9488" strokeWidth="2" size="48" />,
     },
     {
       name: "Gyms",
-      data: amenities?.gymData,
-      count: amenities?.gymData.length,
+      data: overpassData?.gymData,
+      count: overpassData?.gymData.length,
       icon: <Dumbbell stroke="#0D9488" strokeWidth="2" size="48" />,
     },
     {
       name: "Schools",
-      data: amenities?.schoolData,
-      count: amenities?.schoolData.length,
+      data: overpassData?.schoolData,
+      count: overpassData?.schoolData.length,
       icon: <School stroke="#0D9488" strokeWidth="2" size="48" />,
     },
   ];
@@ -314,26 +269,30 @@ export default function Results({ criteria }) {
             </div>
           </div>
 
-          {amenities ? (
+          {!overpassApiFailed ? (
             <div className={styles.smallCardsContainer}>
               {countOfAmenities
                 .sort((a, b) => b.count - a.count)
                 .map((amenity) => (
-                  <div className={styles.smallCard}>
+                  <div key={amenity.name} className={styles.smallCard}>
                     <div className={styles.smallCardHeading}>
-                      <p key={amenity.name} className={styles.amenityName}>
-                        {amenity.name}
-                      </p>
-                      {amenity.icon}
+                      <p className={styles.amenityName}>{amenity?.name}</p>
+                      {amenity?.icon}
                     </div>
-                    <p className={styles.smallCardCount}>{amenity.count}</p>
-                    <p className={styles.smallCardFooter}>
-                      {findNearestAmenity(amenity.data).name} ·{" "}
-                      {parseFloat(
-                        findNearestAmenity(amenity.data).distance,
-                      ).toFixed(1)}{" "}
-                      km away
-                    </p>
+                    <p className={styles.smallCardCount}>{amenity?.count}</p>
+                    {amenity.count > 0 ? (
+                      <p className={styles.smallCardFooter}>
+                        {findNearestAmenity(amenity?.data).name} ·{" "}
+                        {parseFloat(
+                          findNearestAmenity(amenity?.data).distance,
+                        ).toFixed(1)}{" "}
+                        km away
+                      </p>
+                    ) : (
+                      <p className={styles.smallCardFooter}>
+                        No {amenity.name.toLocaleLowerCase()} found wihin 1km
+                      </p>
+                    )}
                   </div>
                 ))}
             </div>
@@ -559,21 +518,19 @@ export default function Results({ criteria }) {
                   <div className={styles.stat}>
                     <p className={styles.statLabel}>Tram access</p>
                     <p className={styles.statValue}>
-                      {commuteData?.hasTram === null
+                      {overpassApiFailed
                         ? "—"
-                        : commuteData?.hasTram
+                        : overpassData?.tramData.length > 0
                           ? "Yes"
                           : "No"}
                     </p>
                   </div>
                   <div className={styles.stat}>
-                    <p className={styles.statLabel}>
-                      Train Stations &lt; 3 miles
-                    </p>
+                    <p className={styles.statLabel}>Closest Train Station</p>
                     <p className={styles.statValue}>
-                      {commuteData?.nearbyStations === null
+                      {overpassApiFailed
                         ? "—"
-                        : commuteData?.nearbyStations}
+                        : `${findNearestAmenity(overpassData?.trainData).name} · ${distanceMiles(findNearestAmenity(overpassData?.trainData).distance)} mi`}
                     </p>
                   </div>
                 </div>
