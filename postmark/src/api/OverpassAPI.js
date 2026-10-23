@@ -10,7 +10,7 @@ async function fetchFromOverpass(query) {
       const res = await fetch(server, {
         method: "POST",
         body: new URLSearchParams({ data: query }),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(25000),
       });
 
       if (!res.ok) {
@@ -28,12 +28,12 @@ async function fetchFromOverpass(query) {
 }
 
 export async function OverpassAPI(latitude, longitude) {
-  const overpassJson = await fetchFromOverpass(
+  /*const overpassJson = await fetchFromOverpass(
     overpassQuery(latitude, longitude),
-  );
-  /*const overpassJson = !inDev
+  );*/
+  const overpassJson = !inDev
     ? await fetchFromOverpass(overpassQuery(latitude, longitude))
-    : overpassSample; */
+    : overpassSample;
 
   const supermarketData = overpassJson.elements
     .filter((el) => el.tags.shop === "supermarket")
