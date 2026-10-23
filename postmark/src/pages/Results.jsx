@@ -269,27 +269,30 @@ export default function Results({ criteria }) {
             </div>
           </div>
 
-          {!overpassApiFailed && overpassData ? (
+          {!overpassApiFailed ? (
             <div className={styles.smallCardsContainer}>
               {countOfAmenities
                 .sort((a, b) => b.count - a.count)
                 .map((amenity) => (
-                  <div className={styles.smallCard}>
+                  <div key={amenity.name} className={styles.smallCard}>
                     <div className={styles.smallCardHeading}>
-                      <p key={amenity.name} className={styles.amenityName}>
-                        {amenity?.name}
-                      </p>
+                      <p className={styles.amenityName}>{amenity?.name}</p>
                       {amenity?.icon}
                     </div>
-
                     <p className={styles.smallCardCount}>{amenity?.count}</p>
-                    <p className={styles.smallCardFooter}>
-                      {findNearestAmenity(amenity?.data).name} ·{" "}
-                      {parseFloat(
-                        findNearestAmenity(amenity?.data).distance,
-                      ).toFixed(1)}{" "}
-                      km away
-                    </p>
+                    {amenity.count > 0 ? (
+                      <p className={styles.smallCardFooter}>
+                        {findNearestAmenity(amenity?.data).name} ·{" "}
+                        {parseFloat(
+                          findNearestAmenity(amenity?.data).distance,
+                        ).toFixed(1)}{" "}
+                        km away
+                      </p>
+                    ) : (
+                      <p className={styles.smallCardFooter}>
+                        No {amenity.name.toLocaleLowerCase()} found wihin 1km
+                      </p>
+                    )}
                   </div>
                 ))}
             </div>
@@ -527,7 +530,7 @@ export default function Results({ criteria }) {
                     <p className={styles.statValue}>
                       {overpassApiFailed
                         ? "—"
-                        : `${findNearestAmenity(overpassData?.trainData).name} · ${distanceMiles(findNearestAmenity(overpassData?.trainData).distance)}`}
+                        : `${findNearestAmenity(overpassData?.trainData).name} · ${distanceMiles(findNearestAmenity(overpassData?.trainData).distance)} mi`}
                     </p>
                   </div>
                 </div>

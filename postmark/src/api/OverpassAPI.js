@@ -1,7 +1,11 @@
 import { straightLineDistance } from "../utils/distance";
+import overpassSample from "../mockData/sampleOverpass.json";
+
+const inDev = import.meta.env.DEV;
 
 export async function OverpassAPI(latitude, longitude) {
-  var overpassQuery = `
+  if (!inDev) {
+    var overpassQuery = `
     [out:json][timeout:25];
     nwr["shop"="supermarket"](around:1000, ${latitude}, ${longitude})->.supermarkets;
 
@@ -23,16 +27,17 @@ export async function OverpassAPI(latitude, longitude) {
     .schools out tags center;
     .transport out tags center;
     `;
-  var overpassRes = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    body: new URLSearchParams({ data: overpassQuery }),
-  });
+    var overpassRes = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      body: new URLSearchParams({ data: overpassQuery }),
+    });
 
-  if (!overpassRes.ok) {
-    throw new Error("Overpass API call failed. Please retry.");
+    if (!overpassRes.ok) {
+      throw new Error("Overpass API call failed. Please retry.");
+    }
   }
 
-  const overpassJson = await overpassRes.json();
+  const overpassJson = !inDev ? await overpassRes.json() : overpassSample;
 
   const supermarketData = overpassJson.elements
     .filter((el) => el.tags.shop === "supermarket")
