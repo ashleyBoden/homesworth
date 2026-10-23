@@ -1,43 +1,39 @@
 import { straightLineDistance } from "../utils/distance";
 import overpassSample from "../mockData/sampleOverpass.json";
-
+import { overpassQuery } from "./queries/overpassQuery";
+import { OVERPASS_SERVERS } from "../constants/overpassServers";
 const inDev = import.meta.env.DEV;
 
-export async function OverpassAPI(latitude, longitude) {
-  if (!inDev) {
-    var overpassQuery = `
-    [out:json][timeout:25];
-    nwr["shop"="supermarket"](around:1000, ${latitude}, ${longitude})->.supermarkets;
+async function fetchFromOverpass(query) {
+  for (const server of OVERPASS_SERVERS) {
+    try {
+      const res = await fetch(server, {
+        method: "POST",
+        body: new URLSearchParams({ data: query }),
+        signal: AbortSignal.timeout(10000),
+      });
 
-    (
-        nwr["leisure"="fitness_centre"](around:1000, ${latitude}, ${longitude});
-        nwr["leisure"="sports_centre"](around:1000, ${latitude}, ${longitude});
-    )->.gyms;
+      if (!res.ok) {
+        throw new Error(`Server ${server} failed: trying fallback server...`);
+      }
 
-    nwr["amenity"="school"](around:1000, ${latitude}, ${longitude})->.schools;
-
-    (
-        nwr["railway"="station"](around:3000,${latitude},${longitude});
-        nwr["railway"="halt"](around:3000,${latitude},${longitude});
-        nwr["railway"="tram_stop"](around:3000,${latitude},${longitude});
-    )->.transport;
-
-    .supermarkets out tags center;
-    .gyms out tags center;
-    .schools out tags center;
-    .transport out tags center;
-    `;
-    var overpassRes = await fetch("https://overpass-api.de/api/interpreter", {
-      method: "POST",
-      body: new URLSearchParams({ data: overpassQuery }),
-    });
-
-    if (!overpassRes.ok) {
-      throw new Error("Overpass API call failed. Please retry.");
+      console.log(`Server used: ${server}`);
+      return await res.json();
+    } catch (err) {
+      console.error(`${err.message} - ${server}`);
     }
   }
 
-  const overpassJson = !inDev ? await overpassRes.json() : overpassSample;
+  throw new Error("All Overpass servers failed. Please wait and retry...");
+}
+
+export async function OverpassAPI(latitude, longitude) {
+  const overpassJson = await fetchFromOverpass(
+    overpassQuery(latitude, longitude),
+  );
+  /*const overpassJson = !inDev
+    ? await fetchFromOverpass(overpassQuery(latitude, longitude))
+    : overpassSample; */
 
   const supermarketData = overpassJson.elements
     .filter((el) => el.tags.shop === "supermarket")
