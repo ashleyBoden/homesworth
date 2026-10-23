@@ -1,0 +1,109 @@
+{
+  "version": 0.6,
+  "generator": "Hand-written sample for local development",
+  "elements": [
+    {
+      "type": "node",
+      "id": 1,
+      "lat": 53.0007729,
+      "lon": -1.1972355,
+      "tags": {
+        "shop": "supermarket",
+        "name": "Heron Foods"
+      }
+    },
+    {
+      "type": "way",
+      "id": 2,
+      "center": {
+        "lat": 53.003122,
+        "lon": -1.1943184
+      },
+      "tags": {
+        "shop": "supermarket",
+        "name": "Tesco Extra",
+        "brand": "Tesco"
+      }
+    },
+    {
+      "type": "way",
+      "id": 3,
+      "center": {
+        "lat": 53.0045287,
+        "lon": -1.2091074
+      },
+      "tags": {
+        "shop": "supermarket",
+        "brand": "Aldi"
+      }
+    },
+    {
+      "type": "node",
+      "id": 4,
+      "lat": 53.0012036,
+      "lon": -1.1974135,
+      "tags": {
+        "leisure": "fitness_centre",
+        "name": "Gym Beasts"
+      }
+    },
+    {
+      "type": "way",
+      "id": 5,
+      "center": {
+        "lat": 53.0092403,
+        "lon": -1.192563
+      },
+      "tags": {
+        "leisure": "sports_centre",
+        "name": "Ken Martin Leisure Centre"
+      }
+    },
+    {
+      "type": "way",
+      "id": 6,
+      "center": {
+        "lat": 53.0040373,
+        "lon": -1.2059844
+      },
+      "tags": {
+        "amenity": "school",
+        "name": "Rufford Primary and Nursery School",
+        "school": "primary"
+      }
+    },
+    {
+      "type": "way",
+      "id": 7,
+      "center": {
+        "lat": 53.0075511,
+        "lon": -1.1955892
+      },
+      "tags": {
+        "amenity": "school",
+        "name": "The Bulwell Academy",
+        "school": "secondary"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8,
+      "lat": 53.0016,
+      "lon": -1.1966,
+      "tags": {
+        "railway": "station",
+        "name": "Bulwell"
+      }
+    },
+    {
+      "type": "node",
+      "id": 9,
+      "lat": 53.0019,
+      "lon": -1.196,
+      "tags": {
+        "railway": "tram_stop",
+        "name": "Bulwell"
+      }
+    }
+  ]
+}

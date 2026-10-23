@@ -1,10 +1,6 @@
 import { straightLineDistance } from "../utils/distance";
 
-export async function OverpassAPI(postcode) {
-  const res = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
-  const { result } = await res.json();
-  const { latitude, longitude } = result;
-
+export async function OverpassAPI(latitude, longitude) {
   var overpassQuery = `
     [out:json][timeout:25];
     nwr["shop"="supermarket"](around:1000, ${latitude}, ${longitude})->.supermarkets;
@@ -16,30 +12,61 @@ export async function OverpassAPI(postcode) {
 
     nwr["amenity"="school"](around:1000, ${latitude}, ${longitude})->.schools;
 
-    .supermarkets out count;
-    .gyms out count;
-    .schools out count;
+    (
+        nwr["railway"="station"](around:3000,${latitude},${longitude});
+        nwr["railway"="halt"](around:3000,${latitude},${longitude});
+        nwr["railway"="tram_stop"](around:3000,${latitude},${longitude});
+    )->.transport;
 
     .supermarkets out tags center;
     .gyms out tags center;
     .schools out tags center;
+    .transport out tags center;
     `;
   var overpassRes = await fetch("https://overpass-api.de/api/interpreter", {
     method: "POST",
     body: new URLSearchParams({ data: overpassQuery }),
   });
 
-  const overpassJson = await overpassRes.json();
-  console.log(overpassJson);
+  if (!overpassRes.ok) {
+    throw new Error("Overpass API call failed. Please retry.");
+  }
 
-  let supermarketCount = overpassJson.elements[0].tags.total;
-  let gymCount = overpassJson.elements[1].tags.total;
-  let schoolCount = overpassJson.elements[2].tags.total;
+  const overpassJson = await overpassRes.json();
 
   const supermarketData = overpassJson.elements
     .filter((el) => el.tags.shop === "supermarket")
     .map((el) => ({
       name: el.tags.name ?? el.tags.brand ?? "",
+      lat: el.lat ?? el.center.lat,
+      lon: el.lon ?? el.center.lon,
+      distance: straightLineDistance(
+        latitude,
+        longitude,
+        el.lat ?? el.center.lat,
+        el.lon ?? el.center.lon,
+      ),
+    }));
+
+  const trainData = overpassJson.elements
+    .filter((el) => ["station", "halt"].includes(el.tags.railway))
+    .map((el) => ({
+      name: el.tags.name ?? "",
+      type: el.tags.railway,
+      lat: el.lat ?? el.center.lat,
+      lon: el.lon ?? el.center.lon,
+      distance: straightLineDistance(
+        latitude,
+        longitude,
+        el.lat ?? el.center.lat,
+        el.lon ?? el.center.lon,
+      ),
+    }));
+
+  const tramData = overpassJson.elements
+    .filter((el) => ["tram_stop"].includes(el.tags.railway))
+    .map((el) => ({
+      name: el.tags.name ?? "",
       lat: el.lat ?? el.center.lat,
       lon: el.lon ?? el.center.lon,
       distance: straightLineDistance(
@@ -78,15 +105,14 @@ export async function OverpassAPI(postcode) {
         longitude,
         el.lat ?? el.center.lat,
         el.lon ?? el.center.lon,
-      )
+      ),
     }));
 
   return {
-    gymCount,
-    supermarketCount,
-    schoolCount,
     supermarketData,
     gymData,
     schoolData,
+    trainData,
+    tramData,
   };
 }
