@@ -11,7 +11,13 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { OverpassAPI } from "../api/OverpassAPI";
-import { School, Dumbbell, ShoppingCart } from "lucide-react";
+import {
+  School,
+  Dumbbell,
+  ShoppingCart,
+  ChevronsDown,
+  ChevronsUp,
+} from "lucide-react";
 import {
   findNearestCity,
   findNearestAmenity,
@@ -156,21 +162,112 @@ export default function Results({ criteria }) {
       name: "Supermarkets",
       data: overpassData?.supermarketData,
       count: overpassData?.supermarketData.length,
-      icon: <ShoppingCart stroke="#0D9488" strokeWidth="2" size="48" />,
+      icon: !isMobile ? (
+        <ShoppingCart
+          stroke="#0D9488"
+          strokeWidth="2"
+          size="48"
+          className={styles.amenityIcon}
+        />
+      ) : (
+        <ShoppingCart
+          stroke="#0D9488"
+          strokeWidth="2"
+          size="24"
+          className={styles.amenityIcon}
+        />
+      ),
     },
     {
       name: "Gyms",
       data: overpassData?.gymData,
       count: overpassData?.gymData.length,
-      icon: <Dumbbell stroke="#0D9488" strokeWidth="2" size="48" />,
+      icon: !isMobile ? (
+        <Dumbbell
+          stroke="#0D9488"
+          strokeWidth="2"
+          size="48"
+          className={styles.amenityIcon}
+        />
+      ) : (
+        <Dumbbell
+          stroke="#0D9488"
+          strokeWidth="2"
+          size="24"
+          className={styles.amenityIcon}
+        />
+      ),
     },
     {
       name: "Schools",
       data: overpassData?.schoolData,
       count: overpassData?.schoolData.length,
-      icon: <School stroke="#0D9488" strokeWidth="2" size="48" />,
+      icon: !isMobile ? (
+        <School
+          stroke="#0D9488"
+          strokeWidth="2"
+          size="48"
+          className={styles.amenityIcon}
+        />
+      ) : (
+        <School
+          stroke="#0D9488"
+          strokeWidth="2"
+          size="24"
+          className={styles.amenityIcon}
+        />
+      ),
     },
   ];
+
+  const mobileAmenitiesCard = (
+    <div
+      className={styles.mobileAmenitiesContainer}
+      onClick={() =>
+        setOpenCard(openCard === "nearbyAmenities" ? null : "nearbyAmenities")
+      }
+    >
+      <div className={styles.cardHeader}>
+        <p className={styles.cardTitle}>Nearby Amenities</p>
+        <div className={styles.chevronsWrapper}>
+          {openCard === "nearbyAmenities" ? (
+            <ChevronsUp stroke="#0D9488" strokeWidth="2" size="24" />
+          ) : (
+            <ChevronsDown stroke="#0D9488" strokeWidth="2" size="24" />
+          )}
+        </div>
+      </div>
+      {openCard === "nearbyAmenities" &&
+        countOfAmenities
+          .sort((a, b) => b.count - a.count)
+          .map((amenity) => (
+            <>
+              <div key={amenity.name} className={styles.mobileAmenitiesCard}>
+                <p className={styles.amenityName}>{amenity?.name}</p>
+
+                {amenity?.count > 0 ? (
+                  <>
+                    <p className={styles.amenityCount}>{amenity?.count}</p>
+                    <p className={styles.closestAmenityName}>
+                      {findNearestAmenity(amenity?.data).name}
+                    </p>
+                    <p className={styles.closestAmenityDistance}>
+                      {parseFloat(
+                        findNearestAmenity(amenity?.data).distance,
+                      ).toFixed(1)}{" "}
+                      km away
+                    </p>
+                  </>
+                ) : (
+                  <p className={styles.noAmenityFound}>
+                    No {amenity.name} have been found within 1 km.
+                  </p>
+                )}
+              </div>
+            </>
+          ))}
+    </div>
+  );
 
   function scoreDotClass(score) {
     if (score == 0.0) return styles.scoreDotLow;
@@ -269,7 +366,7 @@ export default function Results({ criteria }) {
             </div>
           </div>
 
-          {!overpassApiFailed ? (
+          {!isMobile ? (
             <div className={styles.smallCardsContainer}>
               {countOfAmenities
                 .sort((a, b) => b.count - a.count)
@@ -280,7 +377,7 @@ export default function Results({ criteria }) {
                       {amenity?.icon}
                     </div>
                     <p className={styles.smallCardCount}>{amenity?.count}</p>
-                    {amenity.count > 0 ? (
+                    {amenity.count > 0 && !isMobile ? (
                       <p className={styles.smallCardFooter}>
                         {findNearestAmenity(amenity?.data).name} ·{" "}
                         {parseFloat(
@@ -296,7 +393,9 @@ export default function Results({ criteria }) {
                   </div>
                 ))}
             </div>
-          ) : null}
+          ) : (
+            mobileAmenitiesCard
+          )}
 
           <div className={styles.card}>
             <div
