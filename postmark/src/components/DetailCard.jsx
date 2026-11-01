@@ -26,6 +26,8 @@ export default function DetailCard({
   animate,
   isOpen,
   toggleOpen,
+  summary,
+  addStatsBorder,
 }) {
   return (
     <div className={styles.card}>
@@ -53,7 +55,11 @@ export default function DetailCard({
             ></div>
           </div>
 
-          <div className={styles.stats}>
+          {summary && <p className={styles.cardSummary}>{summary}</p>}
+
+          <div
+            className={`${styles.stats} ${addStatsBorder ? styles.statsWithBorder : ""}`}
+          >
             {stats.map((stat) => (
               <div className={styles.stat} key={stat.label}>
                 <p className={styles.statLabel}>{stat.label}</p>

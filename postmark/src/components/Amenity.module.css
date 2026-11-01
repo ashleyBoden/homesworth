@@ -1,0 +1,114 @@
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+}
+
+.cardTitle {
+  font-weight: 600;
+}
+
+.smallCard {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 20px;
+  margin: 20px 0px;
+  box-shadow: 0 0 5px rgba(65, 105, 225, 0.3);
+  flex: 1;
+}
+
+.smallCardHeading {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  color: var(--text-primary);
+}
+
+.smallCardCount {
+  font-size: 3rem;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.smallCardFooter {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  margin-top: auto;
+}
+
+@media (max-width: 768px) {
+  .mobileAmenitiesHeader {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .mobileAmenitiesContainer > div > p {
+    margin: 0px;
+    align-self: center;
+  }
+
+  .mobileAmenitiesCard {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "amenity-type amenity-count"
+      "amenity-name amenity-distance";
+    border-bottom: 1px solid var(--border);
+    margin: 5px 0px;
+    height: 100px;
+    font-size: 15px;
+    padding: 10px 0px;
+    row-gap: 10px;
+    align-content: center;
+  }
+
+  .mobileAmenitiesCard > div:first-of-type {
+    margin: 20px 0px 5px 0px;
+  }
+
+  .amenityName {
+    grid-area: amenity-type;
+    align-self: center;
+    justify-self: left;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .amenityCount {
+    grid-area: amenity-count;
+    align-self: center;
+    justify-self: right;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .closestAmenityName {
+    grid-area: amenity-name;
+    align-self: last baseline;
+    justify-self: left;
+    color: var(--text-secondary);
+    margin: 0;
+    text-overflow: ellipsis;
+  }
+
+  .closestAmenityDistance {
+    grid-area: amenity-distance;
+    align-self: last baseline;
+    justify-self: right;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  .noAmenityFound {
+    color: var(--text-secondary);
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}

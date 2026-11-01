@@ -115,3 +115,43 @@
 .scoreDotLow {
   background: #ef4444;
 }
+
+@media (max-width: 768px) {
+  .card {
+    max-width: 90%;
+    font-size: 0.8rem;
+  }
+
+  .stats {
+    flex-direction: column;
+    padding: 0px 0px 10px 0px;
+  }
+
+  .stat:nth-child(2) {
+    text-align: left;
+  }
+
+  .stat:nth-child(3) {
+    text-align: left;
+  }
+
+  .stat {
+    flex: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+  }
+
+  .stat:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+
+  .statValue {
+    text-align: right;
+  }
+}

@@ -2,14 +2,6 @@ import { Link, useLocation } from "react-router-dom";
 import styles from "./Results.module.css";
 import { useEffect, useState } from "react";
 import { calculateScores } from "../utils/scoring";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 import { OverpassAPI } from "../api/OverpassAPI";
 import {
   School,
@@ -38,8 +30,11 @@ import { maxDeprivationRank } from "../constants/maxDeprivationRank";
 import { getPostcodeData } from "../api/postcodeAPI";
 import { getCrimeData } from "../api/crimeAPI";
 import { getLandRegistryData } from "../api/landRegistry";
-import DetailCard from "../DetailCard/DetailCard";
+import DetailCard from "../components/DetailCard";
 import { deprivationDescription } from "../constants/deprivationDescription";
+import TrendData from "../components/TrendData";
+import AmenityCard from "../components/AmenityCard";
+import AmenityRow from "../components/AmenityRow";
 
 const years = getLast5Years();
 
@@ -145,22 +140,6 @@ export default function Results({ criteria }) {
     !commuteData ||
     (!overpassData && !overpassApiFailed);
 
-  function scorePillClass(score) {
-    if (score == 0.0) return styles.scorePillLow;
-    if (!score) return "";
-    if (score >= 7) return styles.scorePillHigh;
-    if (score >= 4) return styles.scorePillMid;
-    return styles.scorePillLow;
-  }
-
-  function scoreDotClass(score) {
-    if (score == 0.0) return styles.scoreDotLow;
-    if (!score) return "";
-    if (score >= 7) return styles.scoreDotHigh;
-    if (score >= 4) return styles.scoreDotMid;
-    return styles.scoreDotLow;
-  }
-
   useEffect(() => {
     if (!isLoading) {
       setTimeout(() => setAnimate(true), 100);
@@ -172,18 +151,12 @@ export default function Results({ criteria }) {
       name: "Supermarkets",
       data: overpassData?.supermarketData,
       count: overpassData?.supermarketData.length,
-      icon: !isMobile ? (
+      nearest: findNearestAmenity(overpassData?.supermarketData),
+      icon: (
         <ShoppingCart
           stroke="#0D9488"
           strokeWidth="2"
-          size="48"
-          className={styles.amenityIcon}
-        />
-      ) : (
-        <ShoppingCart
-          stroke="#0D9488"
-          strokeWidth="2"
-          size="24"
+          size={isMobile ? "24" : "48"}
           className={styles.amenityIcon}
         />
       ),
@@ -192,18 +165,12 @@ export default function Results({ criteria }) {
       name: "Gyms",
       data: overpassData?.gymData,
       count: overpassData?.gymData.length,
-      icon: !isMobile ? (
+      nearest: findNearestAmenity(overpassData?.gymData),
+      icon: (
         <Dumbbell
           stroke="#0D9488"
           strokeWidth="2"
-          size="48"
-          className={styles.amenityIcon}
-        />
-      ) : (
-        <Dumbbell
-          stroke="#0D9488"
-          strokeWidth="2"
-          size="24"
+          size={isMobile ? "24" : "48"}
           className={styles.amenityIcon}
         />
       ),
@@ -212,80 +179,17 @@ export default function Results({ criteria }) {
       name: "Schools",
       data: overpassData?.schoolData,
       count: overpassData?.schoolData.length,
-      icon: !isMobile ? (
+      nearest: findNearestAmenity(overpassData?.schoolData),
+      icon: (
         <School
           stroke="#0D9488"
           strokeWidth="2"
-          size="48"
-          className={styles.amenityIcon}
-        />
-      ) : (
-        <School
-          stroke="#0D9488"
-          strokeWidth="2"
-          size="24"
+          size={isMobile ? "24" : "48"}
           className={styles.amenityIcon}
         />
       ),
     },
   ];
-
-  const mobileAmenitiesCard = (
-    <div
-      className={styles.mobileAmenitiesContainer}
-      onClick={() =>
-        setOpenCard(openCard === "nearbyAmenities" ? null : "nearbyAmenities")
-      }
-    >
-      <div className={styles.cardHeader}>
-        <p className={styles.cardTitle}>Nearby Amenities</p>
-        <div className={styles.chevronsWrapper}>
-          {openCard === "nearbyAmenities" ? (
-            <ChevronsUp stroke="#0D9488" strokeWidth="2" size="24" />
-          ) : (
-            <ChevronsDown stroke="#0D9488" strokeWidth="2" size="24" />
-          )}
-        </div>
-      </div>
-      {openCard === "nearbyAmenities" &&
-        countOfAmenities
-          .sort((a, b) => b.count - a.count)
-          .map((amenity) => (
-            <>
-              <div key={amenity.name} className={styles.mobileAmenitiesCard}>
-                <p className={styles.amenityName}>{amenity?.name}</p>
-
-                {amenity?.count > 0 ? (
-                  <>
-                    <p className={styles.amenityCount}>{amenity?.count}</p>
-                    <p className={styles.closestAmenityName}>
-                      {findNearestAmenity(amenity?.data).name}
-                    </p>
-                    <p className={styles.closestAmenityDistance}>
-                      {parseFloat(
-                        findNearestAmenity(amenity?.data).distance,
-                      ).toFixed(1)}{" "}
-                      km away
-                    </p>
-                  </>
-                ) : (
-                  <p className={styles.noAmenityFound}>
-                    No {amenity.name} have been found within 1 km.
-                  </p>
-                )}
-              </div>
-            </>
-          ))}
-    </div>
-  );
-
-  function scoreDotClass(score) {
-    if (score == 0.0) return styles.scoreDotLow;
-    if (!score) return "";
-    if (score >= 7) return styles.scoreDotHigh;
-    if (score >= 4) return styles.scoreDotMid;
-    return styles.scoreDotLow;
-  }
 
   return (
     <main className={styles.main}>
@@ -381,148 +285,97 @@ export default function Results({ criteria }) {
               {countOfAmenities
                 .sort((a, b) => b.count - a.count)
                 .map((amenity) => (
-                  <div key={amenity.name} className={styles.smallCard}>
-                    <div className={styles.smallCardHeading}>
-                      <p className={styles.amenityName}>{amenity?.name}</p>
-                      {amenity?.icon}
-                    </div>
-                    <p className={styles.smallCardCount}>{amenity?.count}</p>
-                    {amenity.count > 0 && !isMobile ? (
-                      <p className={styles.smallCardFooter}>
-                        {findNearestAmenity(amenity?.data).name} ·{" "}
-                        {parseFloat(
-                          findNearestAmenity(amenity?.data).distance,
-                        ).toFixed(1)}{" "}
-                        km away
-                      </p>
-                    ) : (
-                      <p className={styles.smallCardFooter}>
-                        No {amenity.name.toLocaleLowerCase()} found within 1km
-                      </p>
-                    )}
-                  </div>
+                  <AmenityCard
+                    key={amenity?.name}
+                    cardName={amenity?.name}
+                    count={amenity?.count}
+                    icon={amenity?.icon}
+                    nearest={findNearestAmenity(amenity?.data)}
+                  />
                 ))}
             </div>
           ) : (
-            mobileAmenitiesCard
-          )}
-
-          <div className={styles.card}>
             <div
-              className={styles.cardHeader}
+              className={styles.mobileAmenitiesContainer}
               onClick={() =>
-                setOpenCard(openCard === "housePrices" ? null : "housePrices")
+                setOpenCard(openCard === "amenities" ? null : "amenities")
               }
             >
-              <div>
-                <p className={styles.cardTitle}>House prices</p>
-                <p className={styles.cardSource}>
-                  HM Land Registry · {locationData?.result.admin_ward} area
-                </p>
+              <div className={styles.cardHeader}>
+                <p className={styles.cardTitle}>Nearby Amenities</p>
+                <div className={styles.chevronsWrapper}>
+                  {openCard === "amenities" ? (
+                    <ChevronsUp stroke="#0D9488" strokeWidth="2" size="24" />
+                  ) : (
+                    <ChevronsDown stroke="#0D9488" strokeWidth="2" size="24" />
+                  )}
+                </div>
               </div>
-              <div
-                className={`${styles.scorePill} ${scorePillClass(scores?.housePricesScore)}`}
-              >
-                <span
-                  className={` ${styles.scoreDot} ${scoreDotClass(scores?.housePricesScore)}`}
-                ></span>
-                <span>{scores ? scores.housePricesScore.toFixed(1) : "—"}</span>
-              </div>
+              {openCard === "amenities" &&
+                countOfAmenities
+                  .sort((a, b) => b.count - a.count)
+                  .map((amenity) => (
+                    <AmenityRow
+                      key={amenity?.name}
+                      rowName={amenity?.name}
+                      count={amenity?.count}
+                      nearest={amenity?.nearest}
+                    />
+                  ))}
             </div>
+          )}
 
-            {(!isMobile || openCard === "housePrices") && (
-              <>
-                <div className={styles.progressBar}>
-                  <div
-                    className={styles.progressFill}
-                    style={{
-                      width: animate
-                        ? `${scores?.housePricesScore * 10}%`
-                        : "0%",
-                    }}
-                  ></div>
-                </div>
+          <DetailCard
+            cardTitle="House prices"
+            cardSource={`HM Land Registry · ${locationData?.result.admin_ward} area`}
+            stats={[
+              {
+                label: "Median sold price",
+                value: currentPrice
+                  ? `£${currentPrice.toLocaleString()}`
+                  : "No data",
+              },
+              {
+                label: "vs UK Median",
+                value: vsUKAverageFormatted ?? "No data",
+              },
+              {
+                label: "Most common type",
+                value: mostCommonType ?? "No data",
+              },
+            ]}
+            score={scores?.housePricesScore}
+            isMobile={isMobile}
+            animate={animate}
+            isOpen={openCard === "housePrices"}
+            toggleOpen={() =>
+              setOpenCard(openCard === "housePrices" ? null : "housePrices")
+            }
+            summary={
+              vsUKAverage !== null
+                ? getPriceSummary(vsUKAverage, parseFloat(priceChange))
+                : ""
+            }
+            addStatsBorder={true}
+          >
+            <button
+              className={styles.trendToggle}
+              onClick={() => setShowPriceTrend(!showPriceTrend)}
+            >
+              Trend {showPriceTrend ? "▲" : "▼"}
+            </button>
 
-                <p className={styles.cardSummary}>
-                  {vsUKAverage !== null
-                    ? getPriceSummary(vsUKAverage, parseFloat(priceChange))
-                    : ""}
-                </p>
-
-                <div className={`${styles.stats} ${styles.statsWithBorder}`}>
-                  <div className={styles.stat}>
-                    <p className={styles.statLabel}>Median sold price</p>
-                    <p className={styles.statValue}>
-                      {currentPrice
-                        ? `£${currentPrice.toLocaleString()}`
-                        : "No data"}
-                    </p>
-                  </div>
-                  <div className={styles.stat}>
-                    <p className={styles.statLabel}>vs UK Median</p>
-                    <p className={styles.statValue}>
-                      {vsUKAverageFormatted || "No data"}
-                    </p>
-                  </div>
-                  <div className={styles.stat}>
-                    <p className={styles.statLabel}>Most common type</p>
-                    <p className={styles.statValue}>
-                      {mostCommonType || "No data"}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  className={styles.trendToggle}
-                  onClick={() => setShowPriceTrend(!showPriceTrend)}
-                >
-                  Trend {showPriceTrend ? "▲" : "▼"}
-                </button>
-
-                {showPriceTrend && (
-                  <div style={{ width: "100%", height: 240 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={priceChartData}
-                        margin={{ top: 10, right: 20, bottom: 0, left: 20 }}
-                      >
-                        <XAxis
-                          dataKey="year"
-                          stroke="#888892"
-                          tick={{ fill: "#888892", fontSize: 12 }}
-                        />
-                        <YAxis
-                          hide={true}
-                          domain={["dataMin - 10000", "dataMax + 10000"]}
-                        />
-                        <Tooltip
-                          formatter={(value) => [
-                            `£${value.toLocaleString()}`,
-                            "Median price",
-                          ]}
-                          contentStyle={{
-                            background: "#222226",
-                            border: "1px solid rgba(255,255,255,0.08)",
-                            borderRadius: "8px",
-                          }}
-                          labelStyle={{ color: "#888892" }}
-                          itemStyle={{ color: "#F5F4F0" }}
-                        />
-                        <Line
-                          type="linear"
-                          dataKey="price"
-                          stroke="#0D9488"
-                          strokeWidth={2}
-                          dot={{ fill: "#0D9488", r: 4 }}
-                          activeDot={{ r: 6 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </>
+            {showPriceTrend && (
+              <TrendData
+                data={priceChartData}
+                datakeyLine="price"
+                tooltipText={(value) => [
+                  `£${value.toLocaleString()}`,
+                  "Median price",
+                ]}
+              />
             )}
-          </div>
+          </DetailCard>
 
           <DetailCard
             cardTitle="Crime rate"
@@ -555,9 +408,7 @@ export default function Results({ criteria }) {
             stats={[
               {
                 label: "Nearest city",
-                value:
-                  `${commuteData?.nearestCity} · ${commuteData.miles} mi` ||
-                  "Loading...",
+                value: `${commuteData?.nearestCity} · ${commuteData.miles} mi`,
               },
               {
                 label: "Tram access",
@@ -569,9 +420,10 @@ export default function Results({ criteria }) {
               },
               {
                 label: "Closest Train Station",
-                value: overpassApiFailed
-                  ? "—"
-                  : `${findNearestAmenity(overpassData?.trainData).name} · ${distanceMiles(findNearestAmenity(overpassData?.trainData).distance)} mi`,
+                value:
+                  overpassApiFailed || overpassData?.trainData.length === 0
+                    ? "—"
+                    : `${findNearestAmenity(overpassData?.trainData).name} · ${distanceMiles(findNearestAmenity(overpassData?.trainData).distance)} mi`,
               },
             ]}
             score={scores?.commuteScore}
@@ -591,17 +443,19 @@ export default function Results({ criteria }) {
                 label: "IMD decile",
                 value: rank
                   ? Math.ceil((rank / maxDeprivationRank) * 10)
-                  : null,
+                  : "Unable to retrieve deprivation data for this postcode.",
               },
               {
                 label: "National rank",
-                value: `${rank ? rank : null} out of ${maxDeprivationRank.toLocaleString()}`,
+                value: rank
+                  ? `${rank} out of ${maxDeprivationRank.toLocaleString()}`
+                  : "Unable to retrieve deprivation data for this postcode.",
               },
               {
                 label: "Parliamentary constituency",
                 value: locationData
                   ? locationData.result.parliamentary_constituency_2024
-                  : null,
+                  : "Unable to retrieve deprivation data for this postcode.",
               },
             ]}
             score={scores?.deprivationScore}
