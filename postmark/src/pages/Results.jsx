@@ -32,6 +32,8 @@ import { maxDeprivationRank } from "../constants/maxDeprivationRank";
 import { getPostcodeData } from "../api/postcodeAPI";
 import { getCrimeData } from "../api/crimeAPI";
 import { getLandRegistryData } from "../api/landRegistry";
+import DetailCard from "../DetailCard/DetailCard";
+import { deprivationDescription } from "../constants/deprivationDescription";
 
 const years = getLast5Years();
 
@@ -137,12 +139,6 @@ export default function Results({ criteria }) {
     !commuteData ||
     (!overpassData && !overpassApiFailed);
 
-  useEffect(() => {
-    if (!isLoading) {
-      setTimeout(() => setAnimate(true), 100);
-    }
-  }, [isLoading]);
-
   function scorePillClass(score) {
     if (score == 0.0) return styles.scorePillLow;
     if (!score) return "";
@@ -150,6 +146,20 @@ export default function Results({ criteria }) {
     if (score >= 4) return styles.scorePillMid;
     return styles.scorePillLow;
   }
+
+  function scoreDotClass(score) {
+    if (score == 0.0) return styles.scoreDotLow;
+    if (!score) return "";
+    if (score >= 7) return styles.scoreDotHigh;
+    if (score >= 4) return styles.scoreDotMid;
+    return styles.scoreDotLow;
+  }
+
+  useEffect(() => {
+    if (!isLoading) {
+      setTimeout(() => setAnimate(true), 100);
+    }
+  }, [isLoading]);
 
   const countOfAmenities = [
     {
@@ -171,14 +181,6 @@ export default function Results({ criteria }) {
       icon: <School stroke="#0D9488" strokeWidth="2" size="48" />,
     },
   ];
-
-  function scoreDotClass(score) {
-    if (score == 0.0) return styles.scoreDotLow;
-    if (!score) return "";
-    if (score >= 7) return styles.scoreDotHigh;
-    if (score >= 4) return styles.scoreDotMid;
-    return styles.scoreDotLow;
-  }
 
   return (
     <main className={styles.main}>
@@ -290,7 +292,7 @@ export default function Results({ criteria }) {
                       </p>
                     ) : (
                       <p className={styles.smallCardFooter}>
-                        No {amenity.name.toLocaleLowerCase()} found wihin 1km
+                        No {amenity.name.toLocaleLowerCase()} found within 1km
                       </p>
                     )}
                   </div>
@@ -415,222 +417,115 @@ export default function Results({ criteria }) {
             )}
           </div>
 
-          <div className={styles.card}>
-            <div
-              className={styles.cardHeader}
-              onClick={() => setOpenCard(openCard === "crime" ? null : "crime")}
+          <DetailCard
+            cardTitle="Crime rate"
+            cardSource={`Police UK · ${formatMonth(crimeData?.[0]?.month)}`}
+            stats={[
+              { label: "Total crime for the month", value: total },
+              {
+                label: "Data period",
+                value: formatMonth(crimeData?.[0]?.month),
+              },
+              {
+                label: "Most common",
+                value: mostCommonCategory
+                  ? formatCategory(mostCommonCategory)
+                  : "No data",
+              },
+            ]}
+            score={scores?.crimeScore}
+            isMobile={isMobile}
+            animate={animate}
+            isOpen={openCard === "crime"}
+            toggleOpen={() =>
+              setOpenCard(openCard === "crime" ? null : "crime")
+            }
+          />
+
+          <DetailCard
+            cardTitle="Commute time"
+            cardSource="OpenStreetMap · Nearby transport"
+            stats={[
+              {
+                label: "Nearest city",
+                value:
+                  `${commuteData?.nearestCity} · ${commuteData.miles} mi` ||
+                  "Loading...",
+              },
+              {
+                label: "Tram access",
+                value: overpassApiFailed
+                  ? "—"
+                  : overpassData?.tramData.length > 0
+                    ? "Yes"
+                    : "No",
+              },
+              {
+                label: "Closest Train Station",
+                value: overpassApiFailed
+                  ? "—"
+                  : `${findNearestAmenity(overpassData?.trainData).name} · ${distanceMiles(findNearestAmenity(overpassData?.trainData).distance)} mi`,
+              },
+            ]}
+            score={scores?.commuteScore}
+            isMobile={isMobile}
+            animate={animate}
+            isOpen={openCard === "commute"}
+            toggleOpen={() =>
+              setOpenCard(openCard === "commute" ? null : "commute")
+            }
+          />
+
+          <DetailCard
+            cardTitle="Deprivation index"
+            cardSource="ONS · IMD 2019"
+            stats={[
+              {
+                label: "IMD decile",
+                value: rank
+                  ? Math.ceil((rank / maxDeprivationRank) * 10)
+                  : null,
+              },
+              {
+                label: "National rank",
+                value: `${rank ? rank : null} out of ${maxDeprivationRank.toLocaleString()}`,
+              },
+              {
+                label: "Parliamentary constituency",
+                value: locationData
+                  ? locationData.result.parliamentary_constituency_2024
+                  : null,
+              },
+            ]}
+            score={scores?.deprivationScore}
+            isMobile={isMobile}
+            animate={animate}
+            isOpen={openCard === "deprivation"}
+            toggleOpen={() =>
+              setOpenCard(openCard === "deprivation" ? null : "deprivation")
+            }
+          >
+            <button
+              className={styles.moreInfoButton}
+              onClick={() => setShowMoreInfo(!showMoreInfo)}
             >
-              <div>
-                <p className={styles.cardTitle}>Crime rate</p>
-                <p className={styles.cardSource}>
-                  Police.uk · {formatMonth(crimeData?.[0]?.month)}
-                </p>
-              </div>
-              <div
-                className={`${styles.scorePill} ${scorePillClass(scores?.crimeScore)}`}
-              >
-                <span
-                  className={` ${styles.scoreDot} ${scoreDotClass(scores?.crimeScore)}`}
-                ></span>
-                <span>{scores ? scores.crimeScore.toFixed(1) : "—"}</span>
-              </div>
-            </div>
+              What is the Deprivation Index?
+            </button>
 
-            {(!isMobile || openCard === "crime") && (
-              <>
-                <div className={styles.progressBar}>
-                  <div
-                    className={styles.progressFill}
-                    style={{
-                      width: animate ? `${scores?.crimeScore * 10}%` : "0%",
-                    }}
-                  ></div>
+            {showMoreInfo && (
+              <div className={styles.moreInfoOverlay}>
+                <div className={styles.moreInfoContent}>
+                  <p>{deprivationDescription}</p>
+                  <button
+                    className={styles.closeButton}
+                    onClick={() => setShowMoreInfo(false)}
+                  >
+                    Close
+                  </button>
                 </div>
-
-                <div className={styles.stats}>
-                  <div className={styles.stat}>
-                    <p className={styles.statLabel}>
-                      Total crime for the month
-                    </p>
-                    <p className={styles.statValue}>{total ? total : null}</p>
-                  </div>
-                  <div className={styles.stat}>
-                    <p className={styles.statLabel}>Data period</p>
-                    <p className={styles.statValue}>
-                      {formatMonth(crimeData?.[0]?.month)}
-                    </p>
-                  </div>
-                  <div className={styles.stat}>
-                    <p className={styles.statLabel}>Most common</p>
-                    <p className={styles.statValue}>
-                      {mostCommonCategory
-                        ? formatCategory(mostCommonCategory)
-                        : "No data"}
-                    </p>
-                  </div>
-                </div>
-              </>
+              </div>
             )}
-          </div>
-
-          <div className={styles.card}>
-            <div
-              className={styles.cardHeader}
-              onClick={() =>
-                setOpenCard(openCard === "commute" ? null : "commute")
-              }
-            >
-              <div>
-                <p className={styles.cardTitle}>Commute time</p>
-                <p className={styles.cardSource}>
-                  OpenStreetMap · Nearby transport
-                </p>
-              </div>
-              <div
-                className={`${styles.scorePill} ${scorePillClass(scores?.commuteScore)}`}
-              >
-                <span
-                  className={` ${styles.scoreDot} ${scoreDotClass(scores?.commuteScore)}`}
-                ></span>
-                <span>{scores ? scores.commuteScore.toFixed(1) : "—"}</span>
-              </div>
-            </div>
-
-            {(!isMobile || openCard === "commute") && (
-              <>
-                <div className={styles.progressBar}>
-                  <div
-                    className={styles.progressFill}
-                    style={{
-                      width: animate ? `${scores?.commuteScore * 10}%` : "0%",
-                    }}
-                  ></div>
-                </div>
-
-                <div className={styles.stats}>
-                  <div className={styles.stat}>
-                    <p className={styles.statLabel}>Nearest city</p>
-                    <p className={styles.statValue}>
-                      {`${commuteData?.nearestCity} · ${commuteData.miles} mi` ||
-                        "Loading..."}
-                    </p>
-                  </div>
-                  <div className={styles.stat}>
-                    <p className={styles.statLabel}>Tram access</p>
-                    <p className={styles.statValue}>
-                      {overpassApiFailed
-                        ? "—"
-                        : overpassData?.tramData.length > 0
-                          ? "Yes"
-                          : "No"}
-                    </p>
-                  </div>
-                  <div className={styles.stat}>
-                    <p className={styles.statLabel}>Closest Train Station</p>
-                    <p className={styles.statValue}>
-                      {overpassApiFailed
-                        ? "—"
-                        : `${findNearestAmenity(overpassData?.trainData).name} · ${distanceMiles(findNearestAmenity(overpassData?.trainData).distance)} mi`}
-                    </p>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className={styles.card}>
-            <div
-              className={styles.cardHeader}
-              onClick={() =>
-                setOpenCard(openCard === "deprivation" ? null : "deprivation")
-              }
-            >
-              <div>
-                <p className={styles.cardTitle}>Deprivation index</p>
-
-                <p className={styles.cardSource}>ONS · IMD 2019</p>
-              </div>
-              <div
-                className={`${styles.scorePill} ${scorePillClass(scores?.deprivationScore)}`}
-              >
-                <span
-                  className={` ${styles.scoreDot} ${scoreDotClass(scores?.deprivationScore)}`}
-                ></span>
-                <span>{scores ? scores.deprivationScore.toFixed(1) : "—"}</span>
-              </div>
-            </div>
-
-            {(!isMobile || openCard === "deprivation") && (
-              <>
-                <div className={styles.progressBar}>
-                  <div
-                    className={styles.progressFill}
-                    style={{
-                      width: animate
-                        ? `${scores?.deprivationScore * 10}%`
-                        : "0%",
-                    }}
-                  ></div>
-                </div>
-
-                <div className={styles.stats}>
-                  <div className={styles.stat}>
-                    <p className={styles.statLabel}>IMD decile</p>
-                    <p className={styles.statValue}>
-                      {rank
-                        ? Math.ceil((rank / maxDeprivationRank) * 10)
-                        : null}
-                    </p>
-                  </div>
-                  <div className={styles.stat}>
-                    <p className={styles.statLabel}>National rank</p>
-                    <p className={styles.statValue}>
-                      {rank ? rank : null} out of{" "}
-                      {maxDeprivationRank.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className={styles.stat}>
-                    <p className={styles.statLabel}>
-                      Parliamentary constituency
-                    </p>
-                    <p className={styles.statValue}>
-                      {locationData
-                        ? locationData.result.parliamentary_constituency_2024
-                        : null}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  className={styles.moreInfoButton}
-                  onClick={() => setShowMoreInfo(!showMoreInfo)}
-                >
-                  What is the Deprivation Index?
-                </button>
-                {showMoreInfo && (
-                  <div className={styles.moreInfoOverlay}>
-                    <div className={styles.moreInfoContent}>
-                      <p>
-                        The Deprivation Index is a measure of relative
-                        deprivation in England, based on factors such as income,
-                        employment, health, education, housing, and crime. It is
-                        calculated by the Office for National Statistics (ONS)
-                        and is used to identify areas that may require
-                        additional support or resources. Decile 1 means the area
-                        is in the most deprived 10% nationally. Decile 10 means
-                        least deprived.
-                      </p>
-                      <button
-                        className={styles.closeButton}
-                        onClick={() => setShowMoreInfo(false)}
-                      >
-                        Close
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+          </DetailCard>
         </>
       )}
     </main>
