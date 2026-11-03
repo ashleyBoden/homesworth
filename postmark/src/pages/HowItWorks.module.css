@@ -7,15 +7,11 @@
   margin: 0 auto;
 }
 
-p {
+.main > p {
   color: var(--text-primary);
   font-size: 1.2rem;
   text-align: left;
   line-height: 1.5;
-}
-
-a {
-  text-decoration: underline var(--accent) 1px;
 }
 
 a:hover {
@@ -66,7 +62,7 @@ ul {
     flex-direction: column;
   }
 
-  p {
+  .main > p {
     font-size: 1rem;
     line-height: 1.4;
     letter-spacing: 0.5px;

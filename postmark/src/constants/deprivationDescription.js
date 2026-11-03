@@ -1,0 +1,2 @@
+export const deprivationDescription =
+  "The Deprivation Index is a measure of relative deprivation in England, based on factors such as income, employment, health, education, housing, and crime. It is calculated by the Office for National Statistics (ONS) and is used to identify areas that may require additional support or resources. Decile 1 means the area is in the most deprived 10% nationally. Decile 10 means least deprived.";
