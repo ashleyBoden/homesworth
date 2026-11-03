@@ -12,7 +12,7 @@ export default function AmenityCard({ cardName, count, icon, nearest }) {
       {count > 0 ? (
         <p
           className={styles.smallCardFooter}
-        >{`${nearest.name} · ${convertKmToMetres(nearest.distance)}`}</p>
+        >{`${nearest.name} · ${convertKmToMetres(nearest.distance, true)}`}</p>
       ) : (
         <p className={styles.smallCardFooter}>No {cardName} found within 1km</p>
       )}

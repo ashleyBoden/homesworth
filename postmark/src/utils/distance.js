@@ -47,10 +47,16 @@ export function distanceMiles(distanceKm) {
   return Number.parseFloat(distanceInMiles).toFixed(2);
 }
 
-export function convertKmToMetres(distance) {
-  if (distance < 1.0) {
-    return `${Math.round((distance * 1000) / 100) * 100} metres away`;
+export function convertKmToMetres(distance, includeText) {
+  if (distance < 1.0 && !includeText) {
+    return `${Math.round((distance * 1000) / 100) * 100}`;
+  } else if (distance < 1.0 && includeText) {
+    return `${Math.round((distance * 1000) / 100) * 100} metres`;
   }
 
-  return `${Number.parseFloat(distance).toFixed(2)} km away`;
+  var output = includeText
+    ? `${Number.parseFloat(distance).toFixed(2)} km`
+    : Number.parseFloat(distance).toFixed(2);
+
+  return output;
 }

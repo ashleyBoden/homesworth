@@ -14,6 +14,7 @@ import {
   findNearestCity,
   findNearestAmenity,
   distanceMiles,
+  convertKmToMetres,
 } from "../utils/distance";
 import {
   getPriceSummary,
@@ -35,6 +36,7 @@ import { deprivationDescription } from "../constants/deprivationDescription";
 import TrendData from "../components/TrendData";
 import AmenityCard from "../components/AmenityCard";
 import AmenityRow from "../components/AmenityRow";
+import OverallScoreCircle from "../components/OverallScoreCircle";
 
 const years = getLast5Years();
 
@@ -82,10 +84,12 @@ export default function Results({ criteria }) {
         const locality = postcodeData.result.admin_ward.toUpperCase();
         const { latitude, longitude } = postcodeData.result;
         const nearestCity = findNearestCity(latitude, longitude);
-        const miles = distanceMiles(nearestCity.distance);
+        const nearestCityDistance = convertKmToMetres(
+          nearestCity.distance,
+          false,
+        );
         const town = postcodeData.result.admin_district.toUpperCase();
 
-        //Land registry and Crime data APIs
         const [crimeDataJson, landRegistryData] = await Promise.all([
           getCrimeData(latitude, longitude),
           getLandRegistryData(locality, town, years),
@@ -104,7 +108,7 @@ export default function Results({ criteria }) {
         setCrimeData(crimeDataJson);
         setCommuteData({
           nearestCity: nearestCity.name,
-          miles,
+          nearestCityDistance,
         });
       } catch (err) {
         console.error("fetchAll error: ", err);
@@ -115,24 +119,24 @@ export default function Results({ criteria }) {
     fetchAll();
   }, [postcode]);
 
-  //National rank
   const rank = locationData?.result.index_of_multiple_deprivation;
 
+  const closestTrainStation = findNearestAmenity(overpassData?.trainData);
+
   const scores =
-    currentPrice && total && commuteData && rank
+    currentPrice && crimeData && commuteData && rank
       ? calculateScores(
           {
             currentPrice,
             priceChange: parseFloat(priceChange),
             total: total,
-            miles: commuteData.miles,
+            nearestCityDistance: commuteData.nearestCityDistance,
             deprivationRank: rank,
           },
           criteria,
         )
       : null;
 
-  // loading
   const isLoading =
     !locationData ||
     !crimeData ||
@@ -191,6 +195,8 @@ export default function Results({ criteria }) {
     },
   ];
 
+  const sortedAmenities = countOfAmenities.sort((a, b) => b.count - a.count);
+
   return (
     <main className={styles.main}>
       {error && <p className={styles.error}>{error}</p>}
@@ -216,83 +222,25 @@ export default function Results({ criteria }) {
             </div>
 
             <div className={styles.headerRight}>
-              <svg width="200" height="200" viewBox="0 0 120 120">
-                <defs>
-                  <filter id="glow">
-                    <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                    <feMerge>
-                      <feMergeNode in="coloredBlur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-                <circle
-                  cx="60"
-                  cy="60"
-                  r="54"
-                  fill="none"
-                  stroke="rgba(255,255,255,0.08)"
-                  strokeWidth="4"
-                />
-                <circle
-                  cx="60"
-                  cy="60"
-                  r="54"
-                  fill="none"
-                  stroke="#0D9488"
-                  strokeWidth="8"
-                  strokeDasharray="339.3"
-                  strokeDashoffset={
-                    animate
-                      ? 339.3 * (1 - (scores?.overallScore ?? 0) / 10)
-                      : 339.3
-                  }
-                  strokeLinecap="round"
-                  transform="rotate(-90 60 60)"
-                  filter="url(#glow)"
-                  style={{ transition: "stroke-dashoffset 1s ease-out" }}
-                />
-                <text
-                  x="60"
-                  y="53"
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fill="#FFFFFF"
-                  fontSize="35"
-                  fontWeight="700"
-                  fontFamily="Outfit, sans-serif"
-                >
-                  {scores ? scores.overallScore.toFixed(1) : "—"}
-                </text>
-                <text
-                  x="60"
-                  y="80"
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fill="#888892"
-                  fontSize="12"
-                  fontFamily="Outfit, sans-serif"
-                >
-                  / 10
-                </text>
-              </svg>
+              <OverallScoreCircle
+                animate={animate}
+                overallScore={scores?.overallScore}
+              />
               <p className={styles.scoreName}>HOMESWORTH SCORE</p>
             </div>
           </div>
 
           {!isMobile ? (
             <div className={styles.smallCardsContainer}>
-              {countOfAmenities
-                .sort((a, b) => b.count - a.count)
-                .map((amenity) => (
-                  <AmenityCard
-                    key={amenity?.name}
-                    cardName={amenity?.name}
-                    count={amenity?.count}
-                    icon={amenity?.icon}
-                    nearest={findNearestAmenity(amenity?.data)}
-                  />
-                ))}
+              {sortedAmenities.map((amenity) => (
+                <AmenityCard
+                  key={amenity?.name}
+                  cardName={amenity?.name}
+                  count={amenity?.count}
+                  icon={amenity?.icon}
+                  nearest={amenity?.nearest}
+                />
+              ))}
             </div>
           ) : (
             <div
@@ -312,16 +260,14 @@ export default function Results({ criteria }) {
                 </div>
               </div>
               {openCard === "amenities" &&
-                countOfAmenities
-                  .sort((a, b) => b.count - a.count)
-                  .map((amenity) => (
-                    <AmenityRow
-                      key={amenity?.name}
-                      rowName={amenity?.name}
-                      count={amenity?.count}
-                      nearest={amenity?.nearest}
-                    />
-                  ))}
+                sortedAmenities.map((amenity) => (
+                  <AmenityRow
+                    key={amenity?.name}
+                    rowName={amenity?.name}
+                    count={amenity?.count}
+                    nearest={amenity?.nearest}
+                  />
+                ))}
             </div>
           )}
 
@@ -408,7 +354,7 @@ export default function Results({ criteria }) {
             stats={[
               {
                 label: "Nearest city",
-                value: `${commuteData?.nearestCity} · ${commuteData.miles} mi`,
+                value: `${commuteData?.nearestCity} · ${convertKmToMetres(commuteData.nearestCityDistance, true)}`,
               },
               {
                 label: "Tram access",
@@ -423,7 +369,7 @@ export default function Results({ criteria }) {
                 value:
                   overpassApiFailed || overpassData?.trainData.length === 0
                     ? "—"
-                    : `${findNearestAmenity(overpassData?.trainData).name} · ${distanceMiles(findNearestAmenity(overpassData?.trainData).distance)} mi`,
+                    : `${closestTrainStation.name} · ${convertKmToMetres(closestTrainStation.distance, true)}`,
               },
             ]}
             score={scores?.commuteScore}
@@ -441,21 +387,19 @@ export default function Results({ criteria }) {
             stats={[
               {
                 label: "IMD decile",
-                value: rank
-                  ? Math.ceil((rank / maxDeprivationRank) * 10)
-                  : "Unable to retrieve deprivation data for this postcode.",
+                value: rank ? Math.ceil((rank / maxDeprivationRank) * 10) : "-",
               },
               {
                 label: "National rank",
                 value: rank
                   ? `${rank} out of ${maxDeprivationRank.toLocaleString()}`
-                  : "Unable to retrieve deprivation data for this postcode.",
+                  : "-",
               },
               {
                 label: "Parliamentary constituency",
                 value: locationData
                   ? locationData.result.parliamentary_constituency_2024
-                  : "Unable to retrieve deprivation data for this postcode.",
+                  : "-",
               },
             ]}
             score={scores?.deprivationScore}
