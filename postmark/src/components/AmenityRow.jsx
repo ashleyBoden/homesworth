@@ -11,7 +11,7 @@ export default function AmenityRow({ rowName, count, nearest }) {
           <p className={styles.amenityCount}>{count}</p>
           <p className={styles.closestAmenityName}>{nearest.name}</p>
           <p className={styles.closestAmenityDistance}>
-            {convertKmToMetres(nearest.distance)}
+            {convertKmToMetres(nearest.distance, true)}
           </p>
         </>
       ) : (
