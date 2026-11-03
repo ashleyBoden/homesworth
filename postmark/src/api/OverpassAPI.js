@@ -17,7 +17,8 @@ async function fetchFromOverpass(query) {
         throw new Error(`Server ${server} failed: trying fallback server...`);
       }
 
-      console.log(`Server used: ${server}`);
+      if (inDev) console.log(`Server used: ${server}`);
+
       return await res.json();
     } catch (err) {
       console.error(`${err.message} - ${server}`);
