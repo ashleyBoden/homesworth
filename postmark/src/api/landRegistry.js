@@ -1,4 +1,4 @@
-async function fetchLandRegistryData(field, value, years) {
+export async function fetchLandRegistryData(field, value, years) {
   const landRegistryRes = await Promise.all(
     years.map((year) =>
       fetch(
@@ -14,12 +14,34 @@ async function fetchLandRegistryData(field, value, years) {
   return Promise.all(landRegistryRes.map((r) => r.json()));
 }
 
-export async function getLandRegistryData(locality, town, years) {
+async function getLandRegistryAreaNames(postcode) {
+  const locationNames = await fetch(
+    `https://landregistry.data.gov.uk/data/ppi/transaction-record.json?propertyAddress.postcode=${postcode}&_pageSize=1`,
+  );
+
+  if (!locationNames.ok) {
+    throw new Error(
+      "Unable to retrieve the property address from Land Registry. Please try again.",
+    );
+  }
+
+  return locationNames.json() ?? null;
+}
+
+export async function getLandRegistryData(postcode, years) {
+  const names = await getLandRegistryAreaNames(postcode);
+
+  const locality = names?.result?.items[0]?.propertyAddress?.locality;
+  const district = names?.result?.items[0]?.propertyAddress?.district;
+  var data = {};
+
   const localityData = await fetchLandRegistryData("locality", locality, years);
 
   if (localityData.some((r) => r.result.items.length > 0)) {
-    return localityData;
+    data = localityData;
+  } else {
+    data = await fetchLandRegistryData("district", district, years);
   }
 
-  return await fetchLandRegistryData("town", town, years);
+  return { data, locality, district };
 }

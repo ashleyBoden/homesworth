@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import styles from "./Results.module.css";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { calculateScores } from "../utils/scoring";
 import { OverpassAPI } from "../api/OverpassAPI";
 import {
@@ -13,7 +13,6 @@ import {
 import {
   findNearestCity,
   findNearestAmenity,
-  distanceMiles,
   convertKmToMetres,
 } from "../utils/distance";
 import {
@@ -37,6 +36,8 @@ import TrendData from "../components/TrendData";
 import AmenityCard from "../components/AmenityCard";
 import AmenityRow from "../components/AmenityRow";
 import OverallScoreCircle from "../components/OverallScoreCircle";
+import { inDev } from "../constants/inDev";
+import { capitaliseFirstLetter } from "../utils/miscFunctions";
 
 const years = getLast5Years();
 
@@ -47,6 +48,8 @@ export default function Results({ criteria }) {
   const [error, setError] = useState(null);
 
   const [priceData, setPriceData] = useState(null);
+  const [locality, setLocality] = useState(null);
+  const [district, setDistrict] = useState(null);
   const housePriceStats = priceData ? housePriceData(priceData) : null;
   const {
     currentPrice,
@@ -81,18 +84,16 @@ export default function Results({ criteria }) {
       try {
         const postcodeData = await getPostcodeData(postcode);
         setLocationData(postcodeData);
-        const locality = postcodeData.result.admin_ward.toUpperCase();
         const { latitude, longitude } = postcodeData.result;
         const nearestCity = findNearestCity(latitude, longitude);
         const nearestCityDistance = convertKmToMetres(
           nearestCity.distance,
           false,
         );
-        const town = postcodeData.result.admin_district.toUpperCase();
 
         const [crimeDataJson, landRegistryData] = await Promise.all([
           getCrimeData(latitude, longitude),
-          getLandRegistryData(locality, town, years),
+          getLandRegistryData(formatPostcode(postcode), years),
         ]);
 
         try {
@@ -104,7 +105,10 @@ export default function Results({ criteria }) {
           setOverpassApiFailed(true);
         }
 
-        setPriceData(landRegistryData);
+        setPriceData(landRegistryData.data);
+        setLocality(landRegistryData.locality);
+        setDistrict(landRegistryData.district);
+
         setCrimeData(crimeDataJson);
         setCommuteData({
           nearestCity: nearestCity.name,
@@ -197,6 +201,14 @@ export default function Results({ criteria }) {
 
   const sortedAmenities = countOfAmenities.sort((a, b) => b.count - a.count);
 
+  if (inDev) {
+    console.clear();
+    console.log("--------------------------");
+    console.log(locality);
+    console.log(district);
+    console.log(priceData);
+  }
+
   return (
     <main className={styles.main}>
       {error && <p className={styles.error}>{error}</p>}
@@ -216,7 +228,7 @@ export default function Results({ criteria }) {
               <p className={styles.postcode}>{formatPostcode(postcode)}</p>
               <p className={styles.location}>
                 {locationData
-                  ? `${locationData.result.admin_ward}, ${locationData.result.admin_district}`
+                  ? `${capitaliseFirstLetter(locality)}, ${capitaliseFirstLetter(district)}`
                   : "Loading..."}
               </p>
             </div>
@@ -273,7 +285,7 @@ export default function Results({ criteria }) {
 
           <DetailCard
             cardTitle="House prices"
-            cardSource={`HM Land Registry · ${locationData?.result.admin_ward} area`}
+            cardSource={`HM Land Registry · ${capitaliseFirstLetter(locality)}`}
             stats={[
               {
                 label: "Median sold price",
@@ -315,7 +327,7 @@ export default function Results({ criteria }) {
               <TrendData
                 data={priceChartData}
                 datakeyLine="price"
-                tooltipText={(value) => [
+                tooltipText={(value, count) => [
                   `£${value.toLocaleString()}`,
                   "Median price",
                 ]}
