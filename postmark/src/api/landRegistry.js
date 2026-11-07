@@ -1,8 +1,10 @@
-export async function fetchLandRegistryData(field, value, years) {
+import { devLog } from "../utils/miscFunctions";
+
+async function fetchLandRegistryData(field, value, years) {
   const landRegistryRes = await Promise.all(
     years.map((year) =>
       fetch(
-        `https://landregistry.data.gov.uk/data/ppi/transaction-record.json?propertyAddress.${field}=${value}&min-transactionDate=${year}-01-01&max-transactionDate=${year}-12-31&_page=0&_pageSize=50`,
+        `https://landregistry.data.gov.uk/data/ppi/transaction-record.json?propertyAddress.${field}=${encodeURIComponent(value)}&min-transactionDate=${year}-01-01&max-transactionDate=${year}-12-31&_page=0&_pageSize=50`,
       ),
     ),
   );
@@ -28,20 +30,53 @@ async function getLandRegistryAreaNames(postcode) {
   return locationNames.json() ?? null;
 }
 
-export async function getLandRegistryData(postcode, years) {
+export async function getLandRegistryData(
+  postcode,
+  fallbackLocality,
+  fallbackDistrict,
+  years,
+) {
   const names = await getLandRegistryAreaNames(postcode);
 
   const locality = names?.result?.items[0]?.propertyAddress?.locality;
   const district = names?.result?.items[0]?.propertyAddress?.district;
-  var data = {};
+  let areaUsed;
+  let data;
 
   const localityData = await fetchLandRegistryData("locality", locality, years);
 
   if (localityData.some((r) => r.result.items.length > 0)) {
     data = localityData;
-  } else {
-    data = await fetchLandRegistryData("district", district, years);
+    areaUsed = "locality";
+    devLog("Used land registry locality");
+    return { data, locality, district, areaUsed };
   }
 
-  return { data, locality, district };
+  const districtData = await fetchLandRegistryData("district", district, years);
+
+  if (districtData.some((r) => r.result.items.length > 0)) {
+    data = districtData;
+    areaUsed = "district";
+    devLog("Used land registry district");
+    return { data, locality, district, areaUsed };
+  }
+
+  const fallbackLocalityData = await fetchLandRegistryData(
+    "locality",
+    fallbackLocality,
+    years,
+  );
+
+  if (fallbackLocalityData.some((r) => r.result.items.length > 0)) {
+    data = fallbackLocalityData;
+    areaUsed = "locality";
+    devLog("Used postcodeio locality");
+    return { data, locality, district, areaUsed };
+  }
+
+  data = await fetchLandRegistryData("district", fallbackDistrict, years);
+  areaUsed = "district";
+  devLog("Used postcodeio district: ", fallbackDistrict);
+
+  return { data, locality, district, areaUsed };
 }

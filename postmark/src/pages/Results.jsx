@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import styles from "./Results.module.css";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { calculateScores } from "../utils/scoring";
 import { OverpassAPI } from "../api/OverpassAPI";
 import {
@@ -36,8 +36,12 @@ import TrendData from "../components/TrendData";
 import AmenityCard from "../components/AmenityCard";
 import AmenityRow from "../components/AmenityRow";
 import OverallScoreCircle from "../components/OverallScoreCircle";
-import { inDev } from "../constants/inDev";
-import { capitaliseFirstLetter } from "../utils/miscFunctions";
+import {
+  areaToUseOnHousePriceCard,
+  areaToUseAsHeader,
+  devLog,
+  devLogTable,
+} from "../utils/miscFunctions";
 
 const years = getLast5Years();
 
@@ -46,10 +50,13 @@ export default function Results({ criteria }) {
   const { postcode } = location.state;
   const [locationData, setLocationData] = useState(null);
   const [error, setError] = useState(null);
+  const [postcodeIOLocality, setPostcodeIOLocality] = useState(null);
+  const [postcodeIODistrict, setPostcodeIODistrict] = useState(null);
 
   const [priceData, setPriceData] = useState(null);
-  const [locality, setLocality] = useState(null);
-  const [district, setDistrict] = useState(null);
+  const [landRegistryLocality, setLandRegistryLocality] = useState(null);
+  const [landRegistryDistrict, setLandRegistryDistrict] = useState(null);
+  const [areaUsed, setAreaUsed] = useState(null);
   const housePriceStats = priceData ? housePriceData(priceData) : null;
   const {
     currentPrice,
@@ -85,6 +92,10 @@ export default function Results({ criteria }) {
         const postcodeData = await getPostcodeData(postcode);
         setLocationData(postcodeData);
         const { latitude, longitude } = postcodeData.result;
+        setPostcodeIODistrict(
+          postcodeData?.result?.admin_district.toUpperCase(),
+        );
+        setPostcodeIOLocality(postcodeData?.result?.admin_ward.toUpperCase());
         const nearestCity = findNearestCity(latitude, longitude);
         const nearestCityDistance = convertKmToMetres(
           nearestCity.distance,
@@ -93,7 +104,12 @@ export default function Results({ criteria }) {
 
         const [crimeDataJson, landRegistryData] = await Promise.all([
           getCrimeData(latitude, longitude),
-          getLandRegistryData(formatPostcode(postcode), years),
+          getLandRegistryData(
+            formatPostcode(postcode),
+            postcodeData?.result?.admin_ward.toUpperCase(),
+            postcodeData?.result?.admin_district.toUpperCase(),
+            years,
+          ),
         ]);
 
         try {
@@ -106,8 +122,9 @@ export default function Results({ criteria }) {
         }
 
         setPriceData(landRegistryData.data);
-        setLocality(landRegistryData.locality);
-        setDistrict(landRegistryData.district);
+        setLandRegistryLocality(landRegistryData.locality);
+        setLandRegistryDistrict(landRegistryData.district);
+        setAreaUsed(landRegistryData.areaUsed);
 
         setCrimeData(crimeDataJson);
         setCommuteData({
@@ -201,13 +218,16 @@ export default function Results({ criteria }) {
 
   const sortedAmenities = countOfAmenities.sort((a, b) => b.count - a.count);
 
-  if (inDev) {
-    console.clear();
-    console.log("--------------------------");
-    console.log(locality);
-    console.log(district);
-    console.log(priceData);
-  }
+  useEffect(() => {
+    if (priceData) {
+      devLogTable({
+        landRegistryLocality,
+        landRegistryDistrict,
+        postcodeIOLocality,
+        postcodeIODistrict,
+      });
+    }
+  }, [priceData]);
 
   return (
     <main className={styles.main}>
@@ -228,7 +248,12 @@ export default function Results({ criteria }) {
               <p className={styles.postcode}>{formatPostcode(postcode)}</p>
               <p className={styles.location}>
                 {locationData
-                  ? `${capitaliseFirstLetter(locality)}, ${capitaliseFirstLetter(district)}`
+                  ? areaToUseAsHeader(
+                      landRegistryLocality,
+                      landRegistryDistrict,
+                      postcodeIOLocality,
+                      postcodeIODistrict,
+                    )
                   : "Loading..."}
               </p>
             </div>
@@ -285,7 +310,7 @@ export default function Results({ criteria }) {
 
           <DetailCard
             cardTitle="House prices"
-            cardSource={`HM Land Registry · ${capitaliseFirstLetter(locality)}`}
+            cardSource={`HM Land Registry · ${areaToUseOnHousePriceCard(areaUsed, landRegistryLocality, landRegistryDistrict, postcodeIODistrict)}`}
             stats={[
               {
                 label: "Median sold price",
@@ -327,7 +352,7 @@ export default function Results({ criteria }) {
               <TrendData
                 data={priceChartData}
                 datakeyLine="price"
-                tooltipText={(value, count) => [
+                tooltipText={(value) => [
                   `£${value.toLocaleString()}`,
                   "Median price",
                 ]}
