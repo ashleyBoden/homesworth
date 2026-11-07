@@ -44,7 +44,7 @@ export default function OverallScoreFunction({ animate, overallScore }) {
         fontWeight="700"
         fontFamily="Outfit, sans-serif"
       >
-        {overallScore.toFixed(1)}
+        {overallScore?.toFixed(1) ?? "-"}
       </text>
       <text
         x="60"

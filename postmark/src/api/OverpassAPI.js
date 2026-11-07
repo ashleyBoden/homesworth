@@ -29,9 +29,11 @@ async function fetchFromOverpass(query) {
 }
 
 export async function OverpassAPI(latitude, longitude) {
-  /*const overpassJson = await fetchFromOverpass(
+  /*
+  const overpassJson = await fetchFromOverpass(
     overpassQuery(latitude, longitude),
-  );*/
+  );
+  */
   const overpassJson = !inDev
     ? await fetchFromOverpass(overpassQuery(latitude, longitude))
     : overpassSample;
