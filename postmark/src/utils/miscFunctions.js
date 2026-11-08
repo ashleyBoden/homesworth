@@ -1,18 +1,34 @@
-export function capitaliseFirstLetter(string) {
-  if (string != undefined) {
-    const splitString = string.split(/[ -]/);
-    var newString = "";
-    splitString.forEach((word) => {
-      const firstLetter = word.charAt(0).toUpperCase();
-      const restOfWord = word.slice(1).toLowerCase();
-
-      newString = newString + firstLetter + restOfWord + " ";
-    });
-
-    return newString.trimEnd();
+function isConnector(word) {
+  if (word && ["ON", "UPON", "AND"].includes(word.toUpperCase())) {
+    return true;
   }
 
-  return;
+  return false;
+}
+
+function capitaliseFirstLetter(word) {
+  const firstLetter = word.charAt(0).toUpperCase();
+  const restOfWord = word.slice(1).toLowerCase();
+
+  return firstLetter + restOfWord;
+}
+
+function capitaliseHyphenated(word) {
+  const splitByHyphen = word
+    .split("-")
+    .map((w) => (isConnector(w) ? w.toLowerCase() : capitaliseFirstLetter(w)));
+
+  return splitByHyphen.join("-");
+}
+
+function toTitleCase(string) {
+  if (!string) return "";
+
+  const splitBySpace = string
+    .split(" ")
+    .map((word) => capitaliseHyphenated(word));
+
+  return splitBySpace.join(" ");
 }
 
 export function areaToUseOnHousePriceCard(
@@ -22,35 +38,36 @@ export function areaToUseOnHousePriceCard(
   fallbackDistrict,
 ) {
   if (areaUsed == "locality") {
-    return `${capitaliseFirstLetter(locality)} area`;
+    return `${toTitleCase(locality)} area`;
   } else if (district != undefined) {
-    return `${capitaliseFirstLetter(district)} area`;
+    return `${toTitleCase(district)} area`;
   }
 
-  return `${capitaliseFirstLetter(fallbackDistrict)} (district-wide)`;
+  return `${toTitleCase(fallbackDistrict)} (district-wide)`;
 }
 
 export function areaToUseAsHeader(
+  landRegistryStreetName,
   landRegistryLocality,
   landRegistryDistrict,
-  postcodeIOLocality,
-  postcodeIODisctrict,
+  postcodeIODistrict,
+  postcodeIOCounty,
 ) {
-  let returnString = "";
+  const names = [
+    landRegistryStreetName,
+    landRegistryLocality,
+    landRegistryDistrict,
+    postcodeIODistrict,
+    postcodeIOCounty,
+  ]
+    .filter(Boolean)
+    .map((name) => name.toUpperCase());
 
-  if (landRegistryLocality != undefined) {
-    returnString += `${capitaliseFirstLetter(landRegistryLocality)}, `;
-  } else {
-    returnString += `${capitaliseFirstLetter(postcodeIOLocality)}, `;
-  }
+  const uniqueNames = [...new Set(names)];
 
-  if (landRegistryDistrict != undefined) {
-    returnString += capitaliseFirstLetter(landRegistryDistrict);
-  } else {
-    returnString += capitaliseFirstLetter(postcodeIODisctrict);
-  }
+  const namesToUse = uniqueNames.slice(0, 2).join(", ");
 
-  return returnString;
+  return toTitleCase(namesToUse);
 }
 
 export function devLog(...args) {
