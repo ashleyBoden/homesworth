@@ -52,10 +52,12 @@ export default function Results({ criteria }) {
   const [error, setError] = useState(null);
   const [postcodeIOLocality, setPostcodeIOLocality] = useState(null);
   const [postcodeIODistrict, setPostcodeIODistrict] = useState(null);
+  const [postcodeIOCounty, setPostcodeIOCounty] = useState(null);
 
   const [priceData, setPriceData] = useState(null);
   const [landRegistryLocality, setLandRegistryLocality] = useState(null);
   const [landRegistryDistrict, setLandRegistryDistrict] = useState(null);
+  const [landRegistryStreetName, setLandRegistryStreetName] = useState(null);
   const [areaUsed, setAreaUsed] = useState(null);
   const housePriceStats = priceData ? housePriceData(priceData) : null;
   const {
@@ -96,6 +98,7 @@ export default function Results({ criteria }) {
           postcodeData?.result?.admin_district.toUpperCase(),
         );
         setPostcodeIOLocality(postcodeData?.result?.admin_ward.toUpperCase());
+        setPostcodeIOCounty(postcodeData?.result?.pfa.toUpperCase());
         const nearestCity = findNearestCity(latitude, longitude);
         const nearestCityDistance = convertKmToMetres(
           nearestCity.distance,
@@ -124,6 +127,7 @@ export default function Results({ criteria }) {
         setPriceData(landRegistryData.data);
         setLandRegistryLocality(landRegistryData.locality);
         setLandRegistryDistrict(landRegistryData.district);
+        setLandRegistryStreetName(landRegistryData.streetName);
         setAreaUsed(landRegistryData.areaUsed);
 
         setCrimeData(crimeDataJson);
@@ -226,6 +230,8 @@ export default function Results({ criteria }) {
         postcodeIOLocality,
         postcodeIODistrict,
       });
+      devLog(priceData);
+      devLog(locationData);
     }
   }, [priceData]);
 
@@ -249,10 +255,12 @@ export default function Results({ criteria }) {
               <p className={styles.location}>
                 {locationData
                   ? areaToUseAsHeader(
+                      landRegistryStreetName,
                       landRegistryLocality,
                       landRegistryDistrict,
                       postcodeIOLocality,
                       postcodeIODistrict,
+                      postcodeIOCounty,
                     )
                   : "Loading..."}
               </p>

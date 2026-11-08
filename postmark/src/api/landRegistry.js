@@ -40,6 +40,7 @@ export async function getLandRegistryData(
 
   const locality = names?.result?.items[0]?.propertyAddress?.locality;
   const district = names?.result?.items[0]?.propertyAddress?.district;
+  const streetName = names?.result?.items[0]?.propertyAddress?.street;
   let areaUsed;
   let data;
 
@@ -49,7 +50,7 @@ export async function getLandRegistryData(
     data = localityData;
     areaUsed = "locality";
     devLog("Used land registry locality");
-    return { data, locality, district, areaUsed };
+    return { data, locality, district, areaUsed, streetName };
   }
 
   const districtData = await fetchLandRegistryData("district", district, years);
@@ -58,7 +59,7 @@ export async function getLandRegistryData(
     data = districtData;
     areaUsed = "district";
     devLog("Used land registry district");
-    return { data, locality, district, areaUsed };
+    return { data, locality, district, areaUsed, streetName };
   }
 
   const fallbackLocalityData = await fetchLandRegistryData(
@@ -71,12 +72,12 @@ export async function getLandRegistryData(
     data = fallbackLocalityData;
     areaUsed = "locality";
     devLog("Used postcodeio locality");
-    return { data, locality, district, areaUsed };
+    return { data, locality, district, areaUsed, streetName };
   }
 
   data = await fetchLandRegistryData("district", fallbackDistrict, years);
   areaUsed = "district";
   devLog("Used postcodeio district: ", fallbackDistrict);
 
-  return { data, locality, district, areaUsed };
+  return { data, locality, district, areaUsed, streetName };
 }
