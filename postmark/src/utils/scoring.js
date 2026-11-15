@@ -12,7 +12,7 @@ export function calculateScores(data, weights) {
   const housePricesScore = affordablityScore * 0.7 + trendScore * 0.3;
 
   const crimeScore = Math.max(0, 10 - (total / 500) * 10);
-  const commuteScore = Math.max(0, 10 - (nearestCityDistance / 50) * 10);
+  const commuteScore = Math.max(0, 10 - (nearestCityDistance / 80) * 10);
   const deprivationScore = (deprivationRank / 32844) * 10;
 
   const totalWeight =
