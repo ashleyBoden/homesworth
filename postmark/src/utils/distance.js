@@ -48,15 +48,17 @@ export function distanceMiles(distanceKm) {
 }
 
 export function convertKmToMetres(distance, includeText) {
-  if (distance < 1.0 && !includeText) {
+  const roundedDistance = Math.round((distance * 1000) / 100) * 100;
+
+  if (roundedDistance < 1000 && !includeText) {
     return `${Math.round((distance * 1000) / 100) * 100}`;
-  } else if (distance < 1.0 && includeText) {
+  } else if (roundedDistance < 1000 && includeText) {
     return `${Math.round((distance * 1000) / 100) * 100} metres`;
   }
 
   var output = includeText
-    ? `${Number.parseFloat(distance).toFixed(2)} km`
-    : Number.parseFloat(distance).toFixed(2);
+    ? `${Math.round(Number.parseFloat(distance).toFixed(2))} km`
+    : Math.round(Number.parseFloat(distance).toFixed(2));
 
   return output;
 }

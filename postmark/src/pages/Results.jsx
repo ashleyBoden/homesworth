@@ -100,10 +100,6 @@ export default function Results({ criteria }) {
         setPostcodeIOLocality(postcodeData?.result?.admin_ward.toUpperCase());
         setPostcodeIOCounty(postcodeData?.result?.pfa.toUpperCase());
         const nearestCity = findNearestCity(latitude, longitude);
-        const nearestCityDistance = convertKmToMetres(
-          nearestCity.distance,
-          false,
-        );
 
         const [crimeDataJson, landRegistryData] = await Promise.all([
           getCrimeData(latitude, longitude),
@@ -133,7 +129,7 @@ export default function Results({ criteria }) {
         setCrimeData(crimeDataJson);
         setCommuteData({
           nearestCity: nearestCity.name,
-          nearestCityDistance,
+          nearestCityDistance: nearestCity.distance,
         });
       } catch (err) {
         console.error("fetchAll error: ", err);
@@ -234,6 +230,16 @@ export default function Results({ criteria }) {
       devLog(locationData);
     }
   }, [priceData]);
+
+  devLog(`Nearest city: ${commuteData?.nearestCity}`);
+  devLog(
+    `Distance to nearest city (no function): ${commuteData?.nearestCityDistance}`,
+  );
+  devLog(
+    `Distance to nearest city (inc function): ${convertKmToMetres(commuteData?.nearestCityDistance, false)}`,
+  );
+  devLog("------------------------------");
+  devLog("------------------------------");
 
   return (
     <main className={styles.main}>
