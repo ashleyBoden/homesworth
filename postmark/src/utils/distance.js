@@ -51,9 +51,9 @@ export function convertKmToMetres(distance, includeText) {
   const roundedDistance = Math.round((distance * 1000) / 100) * 100;
 
   if (roundedDistance < 1000 && !includeText) {
-    return `${Math.round((distance * 1000) / 100) * 100}`;
+    return `${roundedDistance}`;
   } else if (roundedDistance < 1000 && includeText) {
-    return `${Math.round((distance * 1000) / 100) * 100} metres`;
+    return `${roundedDistance} metres`;
   }
 
   var output = includeText
